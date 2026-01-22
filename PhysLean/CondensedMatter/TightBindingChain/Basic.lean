@@ -511,9 +511,125 @@ noncomputable def energyEigenstate (k : T.QuantaWaveNumber) : T.HilbertSpace :=
 -/
 
 /-- The energy eigenstates of the tight binding chain are orthogonal. -/
-@[sorryful]
 lemma energyEigenstate_orthogonal :
-    Pairwise fun k1 k2 => ⟪T.energyEigenstate k1, T.energyEigenstate k2⟫_ℂ = 0 := by sorry
+    Pairwise fun k1 k2 => ⟪T.energyEigenstate k1, T.energyEigenstate k2⟫_ℂ = 0 := by
+  intro k1 k2 hne
+  simp only [energyEigenstate]
+  -- Expand the inner product and use orthonormality to collapse the double sum
+  rw [sum_inner]
+  simp_rw [inner_sum, inner_smul_left, inner_smul_right]
+  -- Use orthonormality: ⟪|n⟩, |m⟩⟫ = if n = m then 1 else 0
+  simp only [orthonormal_iff_ite.mp T.localizedState_orthonormal]
+  -- Collapse the inner sum to a single sum
+  have hcollapse : ∀ n : Fin T.N,
+      ∑ m : Fin T.N, (starRingEnd ℂ) (Complex.exp (Complex.I * k1 * n * T.a)) *
+        (Complex.exp (Complex.I * k2 * m * T.a) * if n = m then 1 else 0) =
+      (starRingEnd ℂ) (Complex.exp (Complex.I * k1 * n * T.a)) * Complex.exp (Complex.I * k2 * n * T.a) := by
+    intro n
+    trans (starRingEnd ℂ) (Complex.exp (Complex.I * k1 * n * T.a)) *
+          ∑ m : Fin T.N, Complex.exp (Complex.I * k2 * m * T.a) * if n = m then 1 else 0
+    · rw [Finset.mul_sum]
+    congr 1
+    simp only [mul_ite, mul_one, mul_zero]
+    simp_rw [eq_comm (a := n)]
+    rw [Finset.sum_ite_eq' Finset.univ n (fun m => Complex.exp (Complex.I * k2 * m * T.a))]
+    simp only [Finset.mem_univ, ↓reduceIte]
+  have hgoal : (∑ x : Fin T.N, ∑ x_1 : Fin T.N, (starRingEnd ℂ) (Complex.exp (Complex.I * k1 * x * T.a)) *
+        (Complex.exp (Complex.I * k2 * x_1 * T.a) * if x = x_1 then 1 else 0)) =
+      ∑ n : Fin T.N, (starRingEnd ℂ) (Complex.exp (Complex.I * k1 * n * T.a)) *
+        Complex.exp (Complex.I * k2 * n * T.a) := by
+    apply Finset.sum_congr rfl
+    intro n _
+    exact hcollapse n
+  rw [hgoal]
+  -- Now we have ∑ n, star(exp(I*k1*n*a)) * exp(I*k2*n*a)
+  -- This equals ∑ n, exp(I*(k2-k1)*n*a)
+  have hsum : ∑ n : Fin T.N, (starRingEnd ℂ) (Complex.exp (Complex.I * k1 * n * T.a)) *
+      Complex.exp (Complex.I * k2 * n * T.a) =
+      ∑ n : Fin T.N, Complex.exp (Complex.I * (k2 - k1) * n * T.a) := by
+    apply Finset.sum_congr rfl
+    intro n _
+    rw [starRingEnd_apply, Complex.star_def]
+    rw [← Complex.exp_conj]
+    simp only [map_mul, Complex.conj_I, Complex.conj_ofReal]
+    rw [← Complex.exp_add]
+    congr 1
+    ring
+  rw [hsum]
+  -- Let ω = exp(I * (k2 - k1) * a), then sum becomes ∑ n, ω^n
+  set ω := Complex.exp (Complex.I * (k2 - k1) * T.a) with hω_def
+  -- Show ω^N = 1 using quantaWaveNumber_exp_N
+  have hω_pow : ω ^ T.N = 1 := by
+    rw [hω_def, ← Complex.exp_nat_mul]
+    have h2 := quantaWaveNumber_exp_N T 1 k2
+    have h1 := quantaWaveNumber_exp_N T 1 k1
+    simp only [Nat.cast_one] at h2 h1
+    have heq : (T.N : ℂ) * (Complex.I * (↑↑k2 - ↑↑k1) * ↑T.a) =
+               Complex.I * ↑↑k2 * 1 * ↑T.N * ↑T.a - Complex.I * ↑↑k1 * 1 * ↑T.N * ↑T.a := by ring
+    rw [heq, Complex.exp_sub, h2, h1, div_one]
+  -- Show ω ≠ 1 because k1 ≠ k2
+  have hω_ne_one : ω ≠ 1 := by
+    intro hω_eq_one
+    apply hne
+    rw [hω_def] at hω_eq_one
+    have hexp := Complex.exp_eq_one_iff.mp hω_eq_one
+    obtain ⟨m, hm⟩ := hexp
+    -- k1 and k2 are both in QuantaWaveNumber, so they have the form (2π/aN)(n - N/2)
+    match k1, k2 with
+    | ⟨_, hk1⟩, ⟨_, hk2⟩ =>
+    simp only [Subtype.mk.injEq]
+    obtain ⟨n1, rfl⟩ := hk1
+    obtain ⟨n2, rfl⟩ := hk2
+    simp only [Complex.ofReal_mul, Complex.ofReal_div, Complex.ofReal_ofNat,
+      Complex.ofReal_natCast, Complex.ofReal_sub] at hm
+    have ha : (T.a : ℂ) ≠ 0 := Complex.ne_zero_of_re_pos T.a_pos
+    have hN : (T.N : ℂ) ≠ 0 := by simp [Ne.symm (NeZero.ne' T.N)]
+    -- I*(k2-k1)*a = 2πIm means (k2-k1)*a = 2πm
+    -- k2 - k1 = 2π(n2-n1)/(aN), so (n2-n1)/N = m, i.e., n2 - n1 = Nm
+    -- Since 0 ≤ n1, n2 < N, we have -N < n2 - n1 < N, so m = 0
+    field_simp at hm
+    have hm_re : (n2 : ℝ) - n1 = T.N * m := by
+      have hre := congrArg Complex.re hm
+      simp only [Complex.mul_re, Complex.I_re, Complex.sub_re, Complex.ofReal_re, mul_zero,
+        Complex.I_im, Complex.ofReal_im, mul_one, sub_zero, Complex.add_re, Complex.ofReal_add,
+        Complex.intCast_re, Complex.natCast_re, zero_mul] at hre
+      linarith
+    have hn1_lt : (n1 : ℤ) < T.N := by exact_mod_cast n1.isLt
+    have hn2_lt : (n2 : ℤ) < T.N := by exact_mod_cast n2.isLt
+    have hn1_ge : (0 : ℤ) ≤ n1 := Nat.cast_nonneg _
+    have hn2_ge : (0 : ℤ) ≤ n2 := Nat.cast_nonneg _
+    have hm_int : (n2 : ℤ) - n1 = T.N * m := by exact_mod_cast hm_re
+    have hm_bound : m = 0 := by
+      have h1 : -(T.N : ℤ) < (n2 : ℤ) - n1 := by omega
+      have h2 : (n2 : ℤ) - n1 < T.N := by omega
+      rw [hm_int] at h1 h2
+      have hN_pos : (0 : ℤ) < T.N := by exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne T.N)
+      nlinarith
+    simp only [hm_bound, mul_zero] at hm_int
+    have heq : n1.val = n2.val := by omega
+    exact Fin.ext heq
+  -- The sum ∑ n, ω^n = 0 when ω^N = 1 and ω ≠ 1
+  have hsum' : ∑ n : Fin T.N, Complex.exp (Complex.I * (↑↑k2 - ↑↑k1) * ↑↑n * ↑T.a) =
+               ∑ n : Fin T.N, ω ^ (n : ℕ) := by
+    apply Finset.sum_congr rfl
+    intro n _
+    rw [hω_def, ← Complex.exp_nat_mul]
+    congr 1
+    ring
+  rw [hsum']
+  -- Geometric series: (ω - 1) * ∑ n, ω^n = ω^N - 1 = 0
+  have hgeom : (ω - 1) * ∑ n : Fin T.N, ω ^ (n : ℕ) = ω ^ T.N - 1 := by
+    rw [Finset.mul_sum, ← Finset.sum_sub_distrib]
+    conv_lhs =>
+      apply Finset.sum_congr rfl
+      intro n _
+      rw [show ω * ω ^ (n : ℕ) - ω ^ (n : ℕ) = ω ^ ((n : ℕ) + 1) - ω ^ (n : ℕ) by ring]
+    rw [← Finset.sum_range_sub (fun n => ω ^ n)]
+    simp
+  rw [hω_pow, sub_self] at hgeom
+  cases mul_eq_zero.mp hgeom with
+  | inl h => exact absurd (sub_eq_zero.mp h) hω_ne_one
+  | inr h => exact h
 
 /-!
 

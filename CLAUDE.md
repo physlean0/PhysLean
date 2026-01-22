@@ -6,17 +6,19 @@
 
 2. **Use proper imports** - Don't work around missing functionality. Import the appropriate Mathlib modules (e.g., `Mathlib.Analysis.SpecialFunctions.Pow.Real` for `Real.rpow`).
 
+3. **Physics Spirit** - Always ensure you follow the spirit of the physics principles. Never reduce to something simpler, fake, or wrong, just because of errors in build process.  Never give up on doing proper physics, but you can always do a simpler/cleaner approach if that is still 100% not giving up on physics principles.
+
 ## Organization
 
-3. **New files for new concepts** - Create separate files for new ideas, theorems, or major topics. Keep files focused and modular.
+1. **New files for new concepts** - Create separate files for new ideas, theorems, or major topics. Keep files focused and modular.
 
-4. **Follow existing patterns** - Match the style and structure of existing PhysLean files (imports, namespaces, documentation format).
+2. **Follow existing patterns** - Match the style and structure of existing PhysLean files (imports, namespaces, documentation format).
 
-5. **Avoid explosion of assumptions** - Ensure you build on top of a foundation of lemmas etc. without making unnecessary explosion of assumptions.  Instead proof the assumptions from foundations.  E.g. avoid `axiom physics_fact : True` type axioms.
+3. **Avoid explosion of assumptions** - Ensure you build on top of a foundation of lemmas etc. without making unnecessary explosion of assumptions.  Instead proof the assumptions from foundations.  E.g. avoid `axiom physics_fact : True` type axioms.
 
-6. **Document physics** - Include docstrings explaining the physical meaning, not just the mathematical definition.
+4. **Document physics** - Include docstrings explaining the physical meaning, not just the mathematical definition.
 
-7. **Reference sources** - Cite textbooks (MTW, Wald, etc.) where applicable.
+5. **Reference sources** - Cite textbooks (MTW, Wald, etc.) where applicable.
 
 ## Lean 4 / Mathlib Proof Standards
 
