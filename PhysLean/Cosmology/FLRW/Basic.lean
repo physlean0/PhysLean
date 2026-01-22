@@ -89,16 +89,18 @@ lemma limit_S_sphere(r : ℝ) :
 
 end SpatialGeometry
 
-/-- The structure FLRW is defined to contain the physical parameters of the
+/-- The structure FLRW contains the physical parameters of the
   Friedmann-Lemaître-Robertson-Walker metric. That is, it contains
-- The scale factor `a(t)`
-- An element of `SpatialGeometry`.
+- The scale factor `a(t)` as a function of cosmic time
+- An element of `SpatialGeometry` (spherical, flat, or saddle).
 
-Semiformal implementation note: It is possible that we should restrict
-`a(t)` to be smooth or at least twice differentiable.
--/
-@[sorryful]
-def FLRW : Type := sorry
+Implementation note: It is possible that we should restrict
+`a(t)` to be smooth or at least twice differentiable in the future. -/
+structure FLRW where
+  /-- The scale factor as a function of cosmic time. -/
+  scaleFactor : ℝ → ℝ
+  /-- The spatial geometry (spherical, flat, or saddle). -/
+  spatialGeometry : SpatialGeometry
 
 namespace FLRW
 

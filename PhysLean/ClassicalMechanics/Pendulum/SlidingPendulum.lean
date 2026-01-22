@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Shlok Vaibhav Singh
 -/
 import PhysLean.Meta.Sorry
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 /-!
 # Sliding Pendulum
 ### Tag: LnL_1.5.2
@@ -59,9 +60,11 @@ namespace ClassicalMechanics
 
 namespace SlidingPendulum
 
-/-- The configuration space of the sliding pendulum system. -/
-@[sorryful]
-def ConfigurationSpace : Type := sorry
+/-- The configuration space of the sliding pendulum system.
+The two degrees of freedom are the horizontal position x₁ of the sliding mass
+and the angle φ that the string makes with the vertical.
+Mathematically this is ℝ × S¹, but we model it as ℝ × ℝ for simplicity. -/
+def ConfigurationSpace : Type := ℝ × ℝ
 
 end SlidingPendulum
 
