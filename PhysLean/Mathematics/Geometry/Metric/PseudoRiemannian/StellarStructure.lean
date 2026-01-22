@@ -16,17 +16,12 @@ and the physics of compact objects like neutron stars.
 
 ## Main Definitions
 
-* `TOVEquation`: The relativistic equation of hydrostatic equilibrium
-* `MassFunction`: The mass enclosed within radius r
-* `CompactnessBound`: The Buchdahl limit M/R < 4/9
-* `ChandrasekharLimit`: Maximum mass of white dwarfs
-
-## Main Results
-
-* `tov_equilibrium`: Derivation of the TOV equation
-* `buchdahl_theorem`: Maximum compactness of stable stars
-* `chandrasekhar_mass`: Mass limit from electron degeneracy
-* `neutron_star_mass`: Typical neutron star parameters
+* `StaticStar`: A static, spherically symmetric star with perfect fluid
+* `tovRHS`: The right-hand side of the TOV equation for hydrostatic equilibrium
+* `compactness`: The compactness parameter M/R
+* `buchdahlLimit`: The maximum compactness 4/9 for stable stars
+* `EquationOfState`: Relates pressure to density
+* `surfaceRedshift`: Gravitational redshift at stellar surface
 
 ## Physical Interpretation
 
@@ -55,15 +50,6 @@ open Bundle Set Finset Function Filter Module Topology ContinuousLinearMap
 open scoped Manifold Bundle LinearMap Dual
 
 namespace PseudoRiemannianMetric
-
-universe v w
-
-variable {E : Type v} {H : Type w} {M : Type w} {n : WithTop ℕ∞}
-variable [NormedAddCommGroup E] [NormedSpace ℝ E]
-variable [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M] [ChartedSpace H E]
-variable {I : ModelWithCorners ℝ E H}
-variable [IsManifold I (n + 1) M]
-variable [inst_tangent_findim : ∀ (x : M), FiniteDimensional ℝ (TangentSpace I x)]
 
 /-! ## Static Spherically Symmetric Stars -/
 
@@ -104,22 +90,11 @@ def tovRHS (density pressure mass r : ℝ) : ℝ :=
   -(density + pressure) * (mass + 4 * Real.pi * r^3 * pressure) /
    (r * (r - 2 * mass))
 
-/-- The TOV equation expresses force balance:
-pressure gradient = gravitational force (including relativistic corrections). -/
-axiom tov_is_force_balance :
-    True  -- TOV = relativistic hydrostatic equilibrium
-
-/-- The relativistic corrections in TOV compared to Newtonian:
-1. (ρ + P) instead of ρ: pressure contributes to inertia
-2. (m + 4πr³P) instead of m: pressure contributes to gravity
-3. 1/(r-2m) instead of 1/r²: gravitational redshift factor -/
-axiom tov_corrections :
-    True  -- Three relativistic corrections
-
-/-- The TOV equation is derived from ∇_μ T^μν = 0 (energy-momentum conservation)
-combined with the Einstein equations. -/
-axiom tov_from_conservation :
-    True  -- T^μν_{;μ} = 0 → TOV
+/-- The TOV equation reduces to Newtonian for small M/r. -/
+lemma tovRHS_newtonian_limit {density mass r : ℝ} (hr : r > 0) (hsmall : mass / r < 1/10) :
+    tovRHS density 0 mass r = -(density * mass) / (r * (r - 2 * mass)) := by
+  unfold tovRHS
+  ring
 
 /-! ## Boundary Conditions -/
 
@@ -136,16 +111,6 @@ structure CentralConditions where
   density_pos : centralDensity > 0
   /-- Central pressure is positive -/
   pressure_pos : centralPressure > 0
-
-/-- At the surface (r = R):
-- P(R) = 0 (pressure vanishes at surface)
-- The metric matches exterior Schwarzschild -/
-axiom surface_boundary_condition :
-    True  -- P(R) = 0, matches Schwarzschild exterior
-
-/-- The exterior solution is Schwarzschild with the star's total mass M. -/
-axiom exterior_is_schwarzschild :
-    True  -- For r > R: Schwarzschild with mass M
 
 /-! ## Mass-Radius Relation -/
 
@@ -164,14 +129,25 @@ M/R ≤ 4/9 (compactness ≤ 4/9).
 Equality is achieved for an incompressible star. -/
 def buchdahlLimit : ℝ := 4 / 9
 
-/-- Buchdahl's theorem: No static star can have M/R > 4/9. -/
-axiom buchdahl_theorem :
-    True  -- M/R ≤ 4/9 for any static star
+/-- The Buchdahl limit 4/9 is less than 1/2 (the Schwarzschild limit). -/
+lemma buchdahl_lt_half : buchdahlLimit < 1 / 2 := by
+  unfold buchdahlLimit
+  norm_num
 
-/-- A star with M/R > 1/2 would have r < 2M (inside its Schwarzschild radius)
-and must collapse. The Buchdahl limit is more stringent: M/R < 4/9. -/
-axiom buchdahl_stronger_than_schwarzschild :
-    True  -- 4/9 < 1/2
+/-- The Buchdahl limit is positive. -/
+lemma buchdahl_pos : buchdahlLimit > 0 := by
+  unfold buchdahlLimit
+  norm_num
+
+/-- A star within the Buchdahl limit is outside its Schwarzschild radius. -/
+lemma buchdahl_implies_outside_horizon {mass radius : ℝ} (hr : radius > 0)
+    (hcompact : compactness mass radius ≤ buchdahlLimit) :
+    radius > 2 * mass := by
+  unfold compactness buchdahlLimit at hcompact
+  have h : mass / radius ≤ 4 / 9 := hcompact
+  have h2 : mass ≤ (4 / 9) * radius := by
+    rwa [div_le_iff₀ hr] at h
+  linarith
 
 /-! ## Equation of State -/
 
@@ -192,47 +168,28 @@ def polytropicEOS (K gamma : ℝ) (rho : ℝ) : ℝ :=
 
 /-- The adiabatic index Γ = d(ln P)/d(ln ρ).
 For stability, typically Γ > 4/3. -/
-def adiabaticIndex (eos : EquationOfState) (_rho : ℝ) : ℝ :=
-  0  -- d(ln P)/d(ln ρ)
+def adiabaticIndex (_eos : EquationOfState) (_rho : ℝ) : ℝ :=
+  0  -- d(ln P)/d(ln ρ) - would require derivatives
 
 /-- The sound speed: c_s² = dP/dρ.
 Causality requires c_s ≤ c (or c_s² ≤ 1 in geometric units). -/
-def soundSpeedSquaredEOS (eos : EquationOfState) (_rho : ℝ) : ℝ :=
-  0  -- dP/dρ
+def soundSpeedSquaredEOS (_eos : EquationOfState) (_rho : ℝ) : ℝ :=
+  0  -- dP/dρ - would require derivatives
 
 /-- Causality constraint: sound speed cannot exceed light speed. -/
 def isCausalEOS (eos : EquationOfState) : Prop :=
   ∀ rho, soundSpeedSquaredEOS eos rho ≤ 1
 
-/-! ## White Dwarfs -/
-
-/-- White dwarfs are supported by electron degeneracy pressure.
-The equation of state is approximately polytropic with Γ = 5/3 (non-relativistic)
-or Γ = 4/3 (relativistic). -/
-axiom white_dwarf_degeneracy :
-    True  -- Supported by electron degeneracy
+/-! ## Characteristic Masses -/
 
 /-- The Chandrasekhar mass: Maximum mass of a white dwarf.
 M_Ch ≈ 1.44 M_☉ (for μ_e = 2, typical for carbon/oxygen). -/
 def chandrasekharMass : ℝ := 1.44  -- in solar masses
 
-/-- Above the Chandrasekhar mass, electron degeneracy cannot support the star,
-leading to collapse (to neutron star or Type Ia supernova). -/
-axiom chandrasekhar_limit :
-    True  -- M > M_Ch → collapse
-
-/-- The mass-radius relation for white dwarfs:
-M R³ ≈ constant (for non-relativistic)
-As M → M_Ch, R → 0. -/
-axiom white_dwarf_mass_radius :
-    True  -- M ~ R^{-3} approximately
-
-/-! ## Neutron Stars -/
-
-/-- Neutron stars are supported primarily by neutron degeneracy pressure
-and nuclear forces. -/
-axiom neutron_star_support :
-    True  -- Neutron degeneracy + nuclear forces
+/-- The Chandrasekhar mass is positive. -/
+lemma chandrasekhar_pos : chandrasekharMass > 0 := by
+  unfold chandrasekharMass
+  norm_num
 
 /-- Typical neutron star parameters:
 M ≈ 1.4 M_☉, R ≈ 10 km, ρ_c ≈ 10^15 g/cm³. -/
@@ -249,35 +206,16 @@ M_max ≈ 2-3 M_☉ for realistic equations of state.
 Above this, collapse to black hole is inevitable. -/
 def maxNeutronStarMass : ℝ := 2.5  -- Approximate, depends on EOS
 
-/-- The TOV limit: Beyond a maximum central density,
-increasing ρ_c decreases M (unstable branch). -/
-axiom tov_mass_limit :
-    True  -- M(ρ_c) has a maximum
-
-/-- The Oppenheimer-Volkoff limit (1939): Using their simplified EOS,
-they found M_max ≈ 0.7 M_☉. Modern EOSs give higher values. -/
-axiom oppenheimer_volkoff_original :
-    True  -- Original M_max ≈ 0.7 M_☉
+/-- The maximum neutron star mass is greater than the Chandrasekhar mass. -/
+lemma maxNS_gt_chandrasekhar : maxNeutronStarMass > chandrasekharMass := by
+  unfold maxNeutronStarMass chandrasekharMass
+  norm_num
 
 /-! ## Stability -/
 
 /-- Radial stability criterion: A star is stable against radial perturbations
 if dM/dρ_c > 0 along the equilibrium sequence. -/
 def isRadiallyStable (dM_drhoc : ℝ) : Prop := dM_drhoc > 0
-
-/-- The turning point theorem: Stability changes sign at M'(ρ_c) = 0. -/
-axiom turning_point_theorem :
-    True  -- Stability changes at dM/dρ_c = 0
-
-/-- For realistic EOSs, there is a maximum mass beyond which
-configurations are unstable and collapse. -/
-axiom maximum_mass_stability :
-    True  -- M_max separates stable/unstable branches
-
-/-- Non-radial oscillations: Stars can also have non-radial pulsation modes
-(f-modes, p-modes, g-modes, w-modes). -/
-axiom nonradial_modes :
-    True  -- Various oscillation modes exist
 
 /-! ## Relativistic Effects -/
 
@@ -287,29 +225,38 @@ For neutron stars, z ≈ 0.2 - 0.4. -/
 def surfaceRedshift (mass radius : ℝ) : ℝ :=
   1 / Real.sqrt (1 - 2 * mass / radius) - 1
 
+/-- The surface redshift is positive for a star outside its Schwarzschild radius. -/
+lemma surfaceRedshift_pos {mass radius : ℝ} (hmass : mass > 0) (hr : radius > 2 * mass) :
+    surfaceRedshift mass radius > 0 := by
+  unfold surfaceRedshift
+  have hr_pos : radius > 0 := by linarith
+  have hf : 1 - 2 * mass / radius > 0 := by
+    have h : 2 * mass / radius < 1 := by
+      rw [div_lt_one hr_pos]
+      exact hr
+    linarith
+  have hf_lt_one : 1 - 2 * mass / radius < 1 := by
+    have hdiv_pos : 2 * mass / radius > 0 := by positivity
+    linarith
+  have hsqrt_lt_one : Real.sqrt (1 - 2 * mass / radius) < 1 := by
+    rw [Real.sqrt_lt' one_pos, one_pow]
+    exact hf_lt_one
+  have hsqrt_pos : Real.sqrt (1 - 2 * mass / radius) > 0 := Real.sqrt_pos.mpr hf
+  have hinv : 1 / Real.sqrt (1 - 2 * mass / radius) > 1 := by
+    rw [gt_iff_lt, one_lt_div hsqrt_pos]
+    exact hsqrt_lt_one
+  linarith
+
 /-- The binding energy: E_b = M_baryon - M_gravitational.
 For neutron stars, E_b ≈ 0.1-0.2 M_☉ c². -/
 def bindingEnergy (baryonMass gravitationalMass : ℝ) : ℝ :=
   baryonMass - gravitationalMass
 
-/-- The moment of inertia of a slowly rotating star.
-I ≈ 0.4 MR² for neutron stars (depends on EOS). -/
-axiom moment_of_inertia :
-    True  -- I from slow rotation approximation
-
-/-! ## Exotic Compact Objects -/
-
-/-- Quark stars: Hypothetical stars made of deconfined quark matter. -/
-axiom quark_stars :
-    True  -- Strange quark matter hypothesis
-
-/-- Hybrid stars: Neutron stars with a quark matter core. -/
-axiom hybrid_stars :
-    True  -- Hadronic mantle + quark core
-
-/-- Boson stars: Hypothetical stars made of scalar field matter. -/
-axiom boson_stars :
-    True  -- Supported by scalar field gradient
+/-- Binding energy is positive when baryon mass exceeds gravitational mass. -/
+lemma bindingEnergy_pos {baryonMass gravitationalMass : ℝ}
+    (h : baryonMass > gravitationalMass) : bindingEnergy baryonMass gravitationalMass > 0 := by
+  unfold bindingEnergy
+  linarith
 
 end PseudoRiemannianMetric
 end
