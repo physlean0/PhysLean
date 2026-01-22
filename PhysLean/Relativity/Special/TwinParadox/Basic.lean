@@ -61,7 +61,86 @@ def properTimeTwinB : ℝ := SpaceTime.properTime T.startPoint T.twinBMid +
 /-- The proper time of twin A minus the proper time of twin B. -/
 def ageGap : ℝ := T.properTimeTwinA - T.properTimeTwinB
 
-TODO "6V2UQ" "Find the conditions for which the age gap for the twin paradox is zero."
+/-- The age gap is zero when twinBMid lies on the straight line from startPoint to endPoint.
+    This corresponds to the case where the "detour" is not actually a detour - twin B
+    travels the same path as twin A, just with a stop along the way.
+
+    Mathematically, this means the vectors u = twinBMid - startPoint and
+    v = endPoint - twinBMid are proportional (parallel), so the reverse triangle
+    inequality becomes an equality. -/
+lemma ageGap_eq_zero_of_collinear (T : InstantaneousTwinParadox)
+    (h : ∃ (t : ℝ), 0 < t ∧ t < 1 ∧
+         T.twinBMid = fun i => (1 - t) * T.startPoint i + t * T.endPoint i) :
+    T.ageGap = 0 := by
+  obtain ⟨t, ht_pos, ht_lt1, h_mid⟩ := h
+  unfold ageGap properTimeTwinA properTimeTwinB properTime
+  -- Set up the vectors
+  set u := T.twinBMid - T.startPoint with hu_def
+  set v := T.endPoint - T.twinBMid with hv_def
+  set w := T.endPoint - T.startPoint with hw_def
+  -- Show u = t • w
+  have hu_eq : u = t • w := by
+    funext i
+    have key : T.twinBMid i - T.startPoint i = t * (T.endPoint i - T.startPoint i) := by
+      rw [h_mid]; ring
+    exact key
+  -- Show v = (1 - t) • w
+  have hv_eq : v = (1 - t) • w := by
+    funext i
+    have key : T.endPoint i - T.twinBMid i = (1 - t) * (T.endPoint i - T.startPoint i) := by
+      rw [h_mid]; ring
+    exact key
+  -- The Minkowski products scale appropriately
+  have hu_mink : ⟪u, u⟫ₘ = t^2 * ⟪w, w⟫ₘ := by
+    rw [hu_eq]
+    simp only [minkowskiProduct_apply, minkowskiProductMap_smul_fst, minkowskiProductMap_smul_snd]
+    ring
+  have hv_mink : ⟪v, v⟫ₘ = (1 - t)^2 * ⟪w, w⟫ₘ := by
+    rw [hv_eq]
+    simp only [minkowskiProduct_apply, minkowskiProductMap_smul_fst, minkowskiProductMap_smul_snd]
+    ring
+  -- Use these to compute the proper times
+  -- When t > 0 and t < 1, and ⟪w, w⟫ₘ ≥ 0:
+  -- √(t² ⟪w,w⟫ₘ) = t √⟪w,w⟫ₘ (since t > 0)
+  -- √((1-t)² ⟪w,w⟫ₘ) = (1-t) √⟪w,w⟫ₘ (since 1-t > 0)
+  -- Sum = t √⟪w,w⟫ₘ + (1-t) √⟪w,w⟫ₘ = √⟪w,w⟫ₘ
+  rw [hu_mink, hv_mink]
+  have h1t_pos : 0 < 1 - t := by linarith
+  -- Case split on whether ⟪w, w⟫ₘ ≥ 0
+  by_cases hw_nonneg : 0 ≤ ⟪w, w⟫ₘ
+  · have h1 : Real.sqrt (t ^ 2 * ⟪w, w⟫ₘ) = t * Real.sqrt ⟪w, w⟫ₘ := by
+      rw [Real.sqrt_mul (sq_nonneg t), Real.sqrt_sq (le_of_lt ht_pos)]
+    have h2 : Real.sqrt ((1 - t) ^ 2 * ⟪w, w⟫ₘ) = (1 - t) * Real.sqrt ⟪w, w⟫ₘ := by
+      rw [Real.sqrt_mul (sq_nonneg (1 - t)), Real.sqrt_sq (le_of_lt h1t_pos)]
+    rw [h1, h2]
+    ring
+  · -- If ⟪w, w⟫ₘ < 0, the space is spacelike and sqrt gives 0
+    push_neg at hw_nonneg
+    have h1 : t ^ 2 * ⟪w, w⟫ₘ < 0 := by
+      have ht2_pos : 0 < t ^ 2 := sq_pos_of_pos ht_pos
+      exact mul_neg_of_pos_of_neg ht2_pos hw_nonneg
+    have h2 : (1 - t) ^ 2 * ⟪w, w⟫ₘ < 0 := by
+      have h1t2_pos : 0 < (1 - t) ^ 2 := sq_pos_of_pos h1t_pos
+      exact mul_neg_of_pos_of_neg h1t2_pos hw_nonneg
+    have h3 : ⟪w, w⟫ₘ < 0 := hw_nonneg
+    simp only [Real.sqrt_eq_zero_of_nonpos (le_of_lt h1), Real.sqrt_eq_zero_of_nonpos (le_of_lt h2),
+               Real.sqrt_eq_zero_of_nonpos (le_of_lt h3), _root_.add_zero, sub_self]
+
+/-- When all three paths (both legs and the direct path) are lightlike,
+    all proper times are zero, so the age gap is zero. -/
+lemma ageGap_eq_zero_of_all_lightlike (T : InstantaneousTwinParadox)
+    (h1 : causalCharacter (T.twinBMid - T.startPoint) = CausalCharacter.lightLike)
+    (h2 : causalCharacter (T.endPoint - T.twinBMid) = CausalCharacter.lightLike)
+    (h3 : causalCharacter (T.endPoint - T.startPoint) = CausalCharacter.lightLike) :
+    T.ageGap = 0 := by
+  unfold ageGap properTimeTwinA properTimeTwinB properTime
+  have hu0 : ⟪T.twinBMid - T.startPoint, T.twinBMid - T.startPoint⟫ₘ = 0 :=
+    (lightLike_iff_norm_sq_zero _).mp h1
+  have hv0 : ⟪T.endPoint - T.twinBMid, T.endPoint - T.twinBMid⟫ₘ = 0 :=
+    (lightLike_iff_norm_sq_zero _).mp h2
+  have huv0 : ⟪T.endPoint - T.startPoint, T.endPoint - T.startPoint⟫ₘ = 0 :=
+    (lightLike_iff_norm_sq_zero _).mp h3
+  simp only [hu0, hv0, huv0, Real.sqrt_zero, _root_.add_zero, sub_self]
 
 set_option maxHeartbeats 2000000 in
 /-- In the twin paradox with instantaneous acceleration, Twin A is always older

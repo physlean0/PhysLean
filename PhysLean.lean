@@ -298,6 +298,7 @@ import PhysLean.Relativity.SL2C.Basic
 import PhysLean.Relativity.SL2C.SelfAdjoint
 import PhysLean.Relativity.Special.ProperTime
 import PhysLean.Relativity.Special.TwinParadox.Basic
+import PhysLean.Relativity.Special.TwinParadox.General
 import PhysLean.Relativity.SpeedOfLight
 import PhysLean.Relativity.Tensors.Basic
 import PhysLean.Relativity.Tensors.Color.Basic

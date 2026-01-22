@@ -198,11 +198,55 @@ lemma time_evolution_hubbleConstant (a : ℝ → ℝ) (t : ℝ)
   field_simp [hH_ne] at h ⊢
   linarith [h]
 
-/-- There exists a time at which the hubble constant decreases if and only if
-  there exists a time where the deceleration parameter is less then `-1`. -/
-informal_lemma hubbleConstant_decrease_iff where
-  deps := []
-  tag := "6Z3FS"
+/-- The Hubble constant is decreasing at time t if and only if
+  the deceleration parameter q(t) > -1 (assuming H(t) ≠ 0).
+
+  From `time_evolution_hubbleConstant`:
+    dH/dt = -H² · (1 + q)
+
+  So dH/dt < 0 (H decreasing) iff
+    -H² · (1 + q) < 0
+  Since H² > 0 when H ≠ 0, this is equivalent to
+    1 + q > 0, i.e., q > -1. -/
+lemma hubbleConstant_decreasing_iff (a : ℝ → ℝ) (t : ℝ)
+    (ha : DifferentiableAt ℝ a t)
+    (ha' : DifferentiableAt ℝ (deriv a) t)
+    (ha_ne : a t ≠ 0)
+    (hda_ne : deriv a t ≠ 0) :
+    deriv (hubbleConstant a) t < 0 ↔ decelerationParameter a t > -1 := by
+  rw [time_evolution_hubbleConstant a t ha ha' ha_ne hda_ne]
+  have hH_ne : hubbleConstant a t ≠ 0 := div_ne_zero hda_ne ha_ne
+  have hH_sq_pos : (hubbleConstant a t)^2 > 0 := sq_pos_of_ne_zero hH_ne
+  constructor
+  · intro h
+    -- -H² · (1 + q) < 0 with H² > 0 implies 1 + q > 0
+    have h1 : 1 + decelerationParameter a t > 0 := by nlinarith
+    linarith
+  · intro h
+    -- q > -1 means 1 + q > 0, so -H² · (1 + q) < 0
+    have h1 : 1 + decelerationParameter a t > 0 := by linarith
+    nlinarith
+
+/-- The Hubble constant is increasing at time t if and only if
+  the deceleration parameter q(t) < -1 (assuming H(t) ≠ 0). -/
+lemma hubbleConstant_increasing_iff (a : ℝ → ℝ) (t : ℝ)
+    (ha : DifferentiableAt ℝ a t)
+    (ha' : DifferentiableAt ℝ (deriv a) t)
+    (ha_ne : a t ≠ 0)
+    (hda_ne : deriv a t ≠ 0) :
+    deriv (hubbleConstant a) t > 0 ↔ decelerationParameter a t < -1 := by
+  rw [time_evolution_hubbleConstant a t ha ha' ha_ne hda_ne]
+  have hH_ne : hubbleConstant a t ≠ 0 := div_ne_zero hda_ne ha_ne
+  have hH_sq_pos : (hubbleConstant a t)^2 > 0 := sq_pos_of_ne_zero hH_ne
+  constructor
+  · intro h
+    -- -H² · (1 + q) > 0 with H² > 0 implies 1 + q < 0
+    have h1 : 1 + decelerationParameter a t < 0 := by nlinarith
+    linarith
+  · intro h
+    -- q < -1 means 1 + q < 0, so -H² · (1 + q) > 0
+    have h1 : 1 + decelerationParameter a t < 0 := by linarith
+    nlinarith
 end FriedmannEquation
 end FLRW
 

@@ -864,17 +864,105 @@ lemma trajectory_velocity_eq_zero_iff (IC : InitialConditions) (t : Time) :
     exact Ne.symm (Nat.zero_ne_add_one 1)
 /-!
 
-## F. Some open TODOs
+## F. Period and zero crossings
 
-We give some open TODOs for the classical harmonic oscillator.
+The harmonic oscillator has period T = 2π/ω. After one period, the system returns
+to its initial position and velocity.
 
 -/
 
-TODO "6VZI3" "For the classical harmonic oscillator find the time for which it returns to
-  it's initial position and velocity."
+/-- The period of the harmonic oscillator is 2π/ω. After one period, the trajectory
+returns to its initial position. -/
+lemma trajectory_periodic (IC : InitialConditions) :
+    IC.trajectory S (2 * π / S.ω) = IC.trajectory S 0 := by
+  simp only [trajectory_eq]
+  have h1 : S.ω * (2 * π / S.ω) = 2 * π := by field_simp [S.ω_neq_zero]
+  simp only [h1]
+  simp [Real.cos_two_pi, Real.sin_two_pi]
 
-TODO "6VZJB" "For the classical harmonic oscillator find the times for
-  which it passes through zero."
+/-- After one period, the velocity returns to its initial value. -/
+lemma velocity_periodic (IC : InitialConditions) :
+    ∂ₜ (IC.trajectory S) (2 * π / S.ω) = ∂ₜ (IC.trajectory S) 0 := by
+  simp only [trajectory_velocity]
+  have h1 : S.ω * (2 * π / S.ω) = 2 * π := by field_simp [S.ω_neq_zero]
+  simp only [h1]
+  simp [Real.cos_two_pi, Real.sin_two_pi]
+
+/-- After any integer number of periods (2πn/ω), the trajectory returns to its initial position. -/
+lemma trajectory_periodic_int (IC : InitialConditions) (n : ℤ) :
+    IC.trajectory S ((n : ℝ) * (2 * π / S.ω)) = IC.trajectory S 0 := by
+  simp only [trajectory_eq]
+  have h1 : S.ω * ((n : ℝ) * (2 * π / S.ω)) = n * (2 * π) := by
+    field_simp [S.ω_neq_zero]
+  simp only [h1]
+  -- sin(n * 2π) = 0, cos(n * 2π) = 1
+  have hcos : Real.cos (n * (2 * π)) = 1 := Real.cos_int_mul_two_pi n
+  have hsin : Real.sin (n * (2 * π)) = 0 := by
+    have := Real.sin_add_int_mul_two_pi 0 n
+    simp at this
+    exact this
+  simp [hcos, hsin]
+
+/-!
+
+### F.1. Zero crossing times
+
+The trajectory passes through zero when cos(ωt)·x₀ + (sin(ωt)/ω)·v₀ = 0.
+
+For the one-dimensional case (EuclideanSpace ℝ (Fin 1)), this reduces to:
+  tan(ωt) = -ω·x₀/v₀   (when v₀ ≠ 0)
+  cos(ωt) = 0          (when v₀ = 0 and x₀ ≠ 0)
+
+-/
+
+/-- The cosine of (2n+1)π/2 is zero for any integer n. -/
+lemma cos_odd_half_pi (n : ℤ) : Real.cos ((2 * (n : ℝ) + 1) * π / 2) = 0 := by
+  rw [show (2 * (n : ℝ) + 1) * π / 2 = π / 2 + n * π by ring]
+  rw [Real.cos_add_int_mul_pi, Real.cos_pi_div_two, mul_zero]
+
+/-- When the initial velocity is zero, the trajectory passes through zero
+    at times t = (2n+1)π/(2ω) for any integer n. -/
+lemma trajectory_eq_zero_when_v₀_zero (IC : InitialConditions) (hv : IC.v₀ = 0) (n : ℤ) :
+    IC.trajectory S ((2 * (n : ℝ) + 1) * π / (2 * S.ω)) = 0 := by
+  simp only [trajectory_eq, hv, smul_zero, add_zero]
+  have h1 : S.ω * ((2 * (n : ℝ) + 1) * π / (2 * S.ω)) = (2 * (n : ℝ) + 1) * π / 2 := by
+    field_simp [S.ω_neq_zero]
+  rw [h1, cos_odd_half_pi n, zero_smul]
+
+/-- A specific zero crossing time: when IC.v₀ ≠ 0, the trajectory is zero at
+    t = arctan(-ω·x₀/v₀)/ω. -/
+lemma trajectory_zero_at_arctan (IC : InitialConditions) (hv : IC.v₀ 0 ≠ 0) :
+    IC.trajectory S (Real.arctan (- S.ω * IC.x₀ 0 / IC.v₀ 0) / S.ω) = 0 := by
+  rw [trajectory_eq]
+  ext i
+  fin_cases i
+  simp only [Fin.isValue, Fin.zero_eta, PiLp.add_apply, PiLp.smul_apply, smul_eq_mul,
+    PiLp.zero_apply]
+  have h1 : S.ω * (Real.arctan (-S.ω * IC.x₀ 0 / IC.v₀ 0) / S.ω) =
+      Real.arctan (-S.ω * IC.x₀ 0 / IC.v₀ 0) := by
+    field_simp [S.ω_neq_zero]
+  rw [h1]
+  rw [Real.sin_arctan, Real.cos_arctan]
+  set a := -S.ω * IC.x₀ 0 / IC.v₀ 0
+  have hsqrt_pos : 0 < √(1 + a ^ 2) := by
+    apply sqrt_pos.mpr
+    have : 0 ≤ a ^ 2 := sq_nonneg a
+    linarith
+  have hsqrt_ne : √(1 + a ^ 2) ≠ 0 := ne_of_gt hsqrt_pos
+  -- Goal after simplification: IC.x₀ 0 / √(1 + a²) + (a / √(1 + a²)) * IC.v₀ 0 / ω = 0
+  -- Multiply through by √(1 + a²) * ω:
+  -- IC.x₀ 0 * ω + a * IC.v₀ 0 = 0
+  -- Substituting a = -ω * IC.x₀ 0 / IC.v₀ 0:
+  -- IC.x₀ 0 * ω + (-ω * IC.x₀ 0 / IC.v₀ 0) * IC.v₀ 0 = 0
+  -- IC.x₀ 0 * ω - ω * IC.x₀ 0 = 0 ✓
+  have ha_def : a = -S.ω * IC.x₀ 0 / IC.v₀ 0 := rfl
+  have ha_mul : a * IC.v₀ 0 = -S.ω * IC.x₀ 0 := by
+    rw [ha_def]
+    field_simp [hv]
+  field_simp [S.ω_neq_zero, hsqrt_ne]
+  -- Goal: IC.x₀ 0 * S.ω + a * IC.v₀ 0 = 0
+  rw [ha_mul]
+  ring
 
 end InitialConditions
 

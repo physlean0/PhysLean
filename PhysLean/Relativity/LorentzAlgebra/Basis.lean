@@ -142,22 +142,85 @@ lemma rotationGenerator_mem (i : Fin 3) : rotationGenerator i ∈ lorentzAlgebra
     fin_cases i <;> fin_cases μ <;> fin_cases ν <;> simp [rotationGenerator]
 
 /-!
-## TODO: Properties of Generators
+## Properties of Generators
 
-The following properties are documented in the docstrings but not yet formally proven.
-These should be established in future PRs to complete the characterization of the generators.
+These lemmas establish key properties of the Lorentz algebra generators:
+- Boost generators are symmetric and traceless
+- Rotation generators are antisymmetric and traceless
 -/
 
-TODO "BOOST_SYM" "Prove that boost generators are symmetric: \
-  (boostGenerator i)ᵀ = boostGenerator i"
+/-- Boost generators are symmetric: K_iᵀ = K_i -/
+@[simp]
+lemma boostGenerator_symmetric (i : Fin 3) :
+    (boostGenerator i)ᵀ = boostGenerator i := by
+  ext μ ν
+  simp only [boostGenerator, transpose_apply]
+  -- The condition (μ = 0 ∧ ν = i) ∨ (μ = i ∧ ν = 0) is symmetric in μ, ν
+  -- when written as: one is time (0) and the other is spatial direction i
+  -- Show both evaluate to 1 when conditions are met, and 0 otherwise
+  by_cases h1 : (μ = Sum.inl 0 ∧ ν = Sum.inr i) ∨ (μ = Sum.inr i ∧ ν = Sum.inl 0)
+  · -- If the (μ, ν) condition is true, show the (ν, μ) condition is also true
+    simp only [h1, ite_true]
+    rcases h1 with ⟨hμ, hν⟩ | ⟨hμ, hν⟩
+    · simp only [hμ, hν, and_true, or_true, ite_true]
+    · simp only [hμ, hν, and_true, true_or, ite_true]
+  · -- If the (μ, ν) condition is false, show the (ν, μ) condition is also false
+    simp only [h1, ite_false]
+    simp only [not_or, not_and] at h1
+    -- The (ν, μ) condition is: (ν = 0 ∧ μ = i) ∨ (ν = i ∧ μ = 0)
+    -- We need to show this is also false
+    by_cases h2 : (ν = Sum.inl 0 ∧ μ = Sum.inr i) ∨ (ν = Sum.inr i ∧ μ = Sum.inl 0)
+    · rcases h2 with ⟨hν, hμ⟩ | ⟨hν, hμ⟩
+      · -- ν = 0, μ = i, but h1 says ¬(μ = 0) ∨ ¬(ν = i) and ¬(μ = i) ∨ ¬(ν = 0)
+        have := h1.2 hμ
+        simp only [hν] at this
+        exact absurd trivial this
+      · -- ν = i, μ = 0, but h1 says ¬(μ = 0) ∨ ¬(ν = i) and ¬(μ = i) ∨ ¬(ν = 0)
+        have := h1.1 hμ
+        simp only [hν] at this
+        exact absurd trivial this
+    · simp only [h2, ite_false]
 
-TODO "BOOST_TRACE" "Prove that boost generators are traceless: \
-  Matrix.trace (boostGenerator i) = 0"
+/-- Boost generators are traceless: tr(K_i) = 0 -/
+@[simp]
+lemma boostGenerator_trace_zero (i : Fin 3) :
+    Matrix.trace (boostGenerator i) = 0 := by
+  simp only [Matrix.trace, boostGenerator, Matrix.diag]
+  -- The trace is over diagonal elements: (0,0), (1,1), (2,2), (3,3)
+  -- Boost generator only has non-zero off-diagonal elements
+  have h : ∀ μ : Fin 1 ⊕ Fin 3, (if (μ = Sum.inl 0 ∧ μ = Sum.inr i) ∨
+      (μ = Sum.inr i ∧ μ = Sum.inl 0) then (1 : ℝ) else 0) = 0 := by
+    intro μ
+    rcases μ with μ | μ
+    · have : μ = 0 := Subsingleton.elim _ _
+      simp [this]
+    · simp
+  simp only [h, Finset.sum_const_zero]
 
-TODO "ROT_ANTISYM" "Prove that rotation generators are antisymmetric: \
-  (rotationGenerator i)ᵀ = -(rotationGenerator i)"
+/-- Rotation generators are antisymmetric: J_iᵀ = -J_i -/
+@[simp]
+lemma rotationGenerator_antisymm (i : Fin 3) :
+    (rotationGenerator i)ᵀ = -(rotationGenerator i) := by
+  ext μ ν
+  simp only [rotationGenerator, transpose_apply, neg_apply]
+  fin_cases i <;> (rcases μ with μ | μ <;> rcases ν with ν | ν) <;>
+    (try fin_cases μ) <;> (try fin_cases ν) <;> simp
 
-TODO "ROT_TRACE" "Prove that rotation generators are traceless: \
-  Matrix.trace (rotationGenerator i) = 0"
+/-- Rotation generators are traceless: tr(J_i) = 0 -/
+@[simp]
+lemma rotationGenerator_trace_zero (i : Fin 3) :
+    Matrix.trace (rotationGenerator i) = 0 := by
+  simp only [Matrix.trace, rotationGenerator, Matrix.diag]
+  -- Rotation generators only have non-zero off-diagonal elements
+  -- The trace sums over diagonal entries where row = column
+  -- These conditions like (x = 1 ∧ x = 2) are always false for diagonal
+  have h : ∀ μ : Fin 1 ⊕ Fin 3, (rotationGenerator i μ μ) = 0 := by
+    intro μ
+    rcases μ with μ | μ
+    · have hμ : μ = 0 := Subsingleton.elim _ _
+      subst hμ
+      fin_cases i <;> rfl
+    · fin_cases i <;> fin_cases μ <;> rfl
+  exact Finset.sum_eq_zero (fun μ _ => h μ)
 
 end lorentzAlgebra
