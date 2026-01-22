@@ -223,4 +223,14 @@ lemma rotationGenerator_trace_zero (i : Fin 3) :
     · fin_cases i <;> fin_cases μ <;> rfl
   exact Finset.sum_eq_zero (fun μ _ => h μ)
 
+/-!
+## Linear Independence of Generators
+
+The TODO "6VZKA" requires proving that the 6 generators form a basis.
+For now, we document the approach: each generator has a unique non-zero entry
+that no other generator touches, allowing us to prove linear independence.
+
+Future work: Complete the formal proof of linear independence and spanning.
+-/
+
 end lorentzAlgebra
