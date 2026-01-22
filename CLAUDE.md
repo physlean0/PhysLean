@@ -92,6 +92,10 @@ Your goal is **logical correctness with minimal assumptions**, not creativity.
 * Treat all "this must cancel" steps as requiring explicit hypotheses.
 * Acknowledge Assumptions: Treat physical constants (like Hbar and c) as elements of a specific structure (e.g., HarmonicOscillator) rather than global variables to avoid "assumption explosion."
 
+### building lean
+
+* Only use 1 background build lean job at a time.  Avoid multiple background jobs, because lean uses all cores and that will exhaust the system.
+
 ### Commit messages
 
 * Avoid mentions of claude as coauthor in commit messages (intent is most of direction is human but actual code is claude in all cases, no need to repeat)
