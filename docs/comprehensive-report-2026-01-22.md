@@ -1,6 +1,6 @@
 # PhysLean Comprehensive Development Report
 
-**Period:** c4d4cb00 → 2352ac36 (32 commits)
+**Period:** c4d4cb00 → 947ad569 (33 commits)
 **Timeframe:** January 21, 2026 17:03 → 22:34 (~5.5 hours)
 **Build Status:** ✅ SUCCESS (4112 jobs)
 
@@ -10,13 +10,45 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Commits | 32 |
+| Total Commits | 33 |
 | Files Changed | 52 |
 | New Files Added | 25 |
-| Lines Added | +10,020 |
-| Lines Removed | -263 |
-| Net Change | **+9,757 lines** |
-| Sorryful Lemmas Remaining | 5 |
+| Lines Added | +10,920 |
+| Lines Removed | -363 |
+| Net Change | **+10,557 lines** |
+
+---
+
+## Formalization Progress
+
+### Conversion Metrics
+
+| Conversion Type | Count |
+|-----------------|-------|
+| `informal_lemma` → **formal proof** | 27 |
+| `informal_definition` → **formal definition** | 8 |
+| `@[sorryful]` → **formal proof** | 21 |
+| `informal_lemma` → `@[sorryful]` (documented) | 3 |
+| **Total formalizations** | **56** |
+
+### Before/After Comparison
+
+| Item | Before (c4d4cb00) | After (HEAD) | Change |
+|------|-------------------|--------------|--------|
+| `informal_lemma` | 63 | 36 | **-27** |
+| `informal_definition` | 41 | 33 | **-8** |
+| `@[sorryful]` | 23 | 5 | **-18** |
+| **Total incomplete** | **127** | **74** | **-53** |
+
+### Remaining @[sorryful] Items (5)
+
+| Lemma | File | Status |
+|-------|------|--------|
+| `isFull_of_isFull` | WickContraction/Perm | Domain expert needed |
+| `perm_uncontractedList` | WickContraction/Perm | Domain expert needed |
+| `piecewise_linear_twin_paradox` | TwinParadox/General | Well-founded recursion needed |
+| `contrBispinorUp_eq_metric_contr_contrBispinorDown` | Bispinors | Informal proof documented |
+| `coBispinorUp_eq_metric_contr_coBispinorDown` | Bispinors | Informal proof documented |
 
 ---
 
@@ -110,21 +142,6 @@
 | `hamiltonian_hermitian` | TightBindingChain | Tight-binding H is Hermitian |
 | `rightHandedAltEquiv` | Weyl/Basic | SL(2,ℂ) representation equivalence |
 | `isBounded_iff_of_𝓵_zero` | HiggsBoson | Higgs potential boundedness |
-
-### Documented with Informal Proofs (@[sorryful])
-
-| Lemma | File | Strategy |
-|-------|------|----------|
-| `piecewise_linear_twin_paradox` | TwinParadox/General | Well-founded recursion on list length |
-| `contrBispinorUp_eq_metric_contr_contrBispinorDown` | Bispinors | Metric contraction → unit tensor |
-| `coBispinorUp_eq_metric_contr_coBispinorDown` | Bispinors | Same as above |
-
-### Remaining @[sorryful] (Domain Expert Needed)
-
-| Lemma | File | Notes |
-|-------|------|-------|
-| `isFull_of_isFull` | WickContraction/Perm | Contact JTS |
-| `perm_uncontractedList` | WickContraction/Perm | Contact JTS |
 
 ---
 
