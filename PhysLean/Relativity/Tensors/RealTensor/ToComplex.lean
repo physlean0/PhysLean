@@ -131,9 +131,22 @@ lemma toComplex_equivariant {n} {c : Fin n → realLorentzTensor.Color}
   apply Tensor.induction_on_pure (t := v)
   · intro p
     rw [actionT_pure]
-    -- For pure tensors, the action factors through each component
-    -- The equivariance follows from inclCongrRealLorentz_ρ for vectors
-    -- and the tensor product structure for higher rank
+    /- For pure tensors, the action factors through each component.
+
+    A pure tensor `p` has `p i : (realLorentzTensor.FD.obj (c i))` for each index `i`.
+    The action transforms each component:
+    - For `.up` colors: uses `(Contr 3).ρ (toLorentzGroup Λ)` on real side,
+      `complexContr.ρ Λ` on complex side
+    - For `.down` colors: uses `(Co 3).ρ (toLorentzGroup Λ)` on real side,
+      `complexCo.ρ Λ` on complex side
+
+    The equivariance follows from:
+    - `Lorentz.inclCongrRealLorentz_ρ` for contravariant vectors (`.up`)
+    - `Lorentz.inclCoRealLorentz_ρ` for covariant vectors (`.down`)
+
+    The proof requires showing that `toComplex` maps pure tensors to pure tensors
+    with complexified components, and that the tensor product structure is preserved.
+    -/
     sorry
   · intro r t ht
     -- Scalar multiplication case: Λ • toComplex (r • t) = toComplex (r • toLorentzGroup Λ • t)
