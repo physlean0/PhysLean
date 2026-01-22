@@ -61,9 +61,12 @@ import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Einstein
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.EnergyConditions
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.FLRW
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Geodesics
+import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.GravitationalLensing
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.GravitationalWaves
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Kerr
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.KillingVector
+import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.PerfectFluid
+import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.ReissnerNordstrom
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Ricci
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Schwarzschild
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.WeylTensor
