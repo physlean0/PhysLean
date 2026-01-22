@@ -439,11 +439,21 @@ For a causally valid piecewise linear worldline with n ≥ 2 points,
 the total proper time is at most the straight-line proper time.
 
 **Proof strategy:**
-The proof uses induction on the list length, applying `threePoint_twin_paradox`
+The proof uses strong induction on the list length, applying `threePoint_twin_paradox`
 at each step. For a list `p₀ :: p₁ :: tail`:
 - By IH on `p₁ :: tail`: sum of proper times from p₁ ≤ properTime p₁ (last point)
 - By three-point on (p₀, p₁, last): properTime p₀ p₁ + properTime p₁ (last) ≤ properTime p₀ (last)
-- Combining: total proper time ≤ straight-line proper time -/
+- Combining: total proper time ≤ straight-line proper time
+
+The base cases (3, 4, 5 points) are already proven as `threePoint_twin_paradox`,
+`fourPoint_twin_paradox`, and `fivePoint_twin_paradox`. The general case follows
+by the same inductive pattern.
+
+**Technical details:**
+- The induction is on list length using `List.twoStepInduction` or equivalent
+- Each step extracts the causality conditions from `IsCausal` for the sub-worldline
+- The key lemma `threePoint_twin_paradox` provides the inductive step
+-/
 @[sorryful]
 theorem piecewise_linear_twin_paradox (W : PiecewiseLinearWorldline 3) (hcausal : W.IsCausal) :
     W.totalProperTime ≤ W.straightLineProperTime := by
