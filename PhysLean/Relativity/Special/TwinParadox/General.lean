@@ -316,6 +316,13 @@ def ofInstantaneousTwinParadox (T : InstantaneousTwinParadox) : PiecewiseLinearW
   points := [T.startPoint, T.twinBMid, T.endPoint]
   nonempty := by simp
 
+/-- A piecewise linear worldline is causally valid if for all indices i < j,
+    `causallyFollows (points[i]) (points[j])`. This ensures all pairs of points
+    are in proper causal order. -/
+def IsCausal (W : PiecewiseLinearWorldline 3) : Prop :=
+  ∀ i j : Fin W.points.length, i < j →
+    causallyFollows (W.points.get i) (W.points.get j)
+
 end PiecewiseLinearWorldline
 
 /-- The instantaneous twin paradox corresponds to a 3-point piecewise linear worldline.
@@ -408,22 +415,49 @@ theorem fivePoint_twin_paradox (p₀ p₁ p₂ p₃ p₄ : SpaceTime 3)
   -- Combine
   linarith
 
+/-- **Piecewise Linear Twin Paradox for Three Points**
+
+For a causally valid 3-point worldline, the total proper time is at most
+the straight-line proper time. This is just a restatement of `threePoint_twin_paradox`
+for the `PiecewiseLinearWorldline` structure. -/
+theorem piecewise_linear_twin_paradox_three (p₀ p₁ p₂ : SpaceTime 3)
+    (h01 : causallyFollows p₀ p₁) (h12 : causallyFollows p₁ p₂) (h02 : causallyFollows p₀ p₂) :
+    let W : PiecewiseLinearWorldline 3 := ⟨[p₀, p₁, p₂], by simp⟩
+    W.totalProperTime ≤ W.straightLineProperTime := by
+  -- Unfold definitions and simplify
+  simp only [PiecewiseLinearWorldline.totalProperTime,
+    PiecewiseLinearWorldline.straightLineProperTime,
+    PiecewiseLinearWorldline.startPoint, PiecewiseLinearWorldline.endPoint,
+    List.tail_cons, List.zip_cons_cons, List.zip_nil_right, List.map_cons,
+    List.map_nil, List.sum_cons, List.sum_nil, _root_.add_zero, List.head_cons,
+    List.getLast_cons_cons, List.getLast_singleton]
+  exact threePoint_twin_paradox p₀ p₁ p₂ h02 h01 h12
+
 /-- **Piecewise Linear Twin Paradox (Semi-formal)**
 
-For any piecewise linear worldline, the total proper time is at most
-the straight-line proper time from start to end.
+For any causally valid piecewise linear worldline with arbitrarily many points,
+the total proper time is at most the straight-line proper time from start to end.
 
-This generalizes the `InstantaneousTwinParadox` case which has exactly
-three points (start, mid, end).
+This is the general form of the twin paradox: taking any detour through spacetime
+(visiting intermediate points along a causal path) results in less or equal
+elapsed proper time compared to traveling directly.
 
-Note: A full proof would require showing that causal connectivity is transitive
-along the worldline and using induction on the number of points. The key
-ingredients are `threePoint_twin_paradox` and `fourPoint_twin_paradox`.
+The proof requires induction on the number of points, using `threePoint_twin_paradox`
+at each step. The base case is n=2 (trivial equality), and the inductive step
+uses the three-point inequality to combine proper times.
+
+**Proof sketch:**
+For points p₀, p₁, ..., pₙ:
+- By IH: τ(p₁, p₂) + ... + τ(pₙ₋₁, pₙ) ≤ τ(p₁, pₙ)
+- By three-point: τ(p₀, p₁) + τ(p₁, pₙ) ≤ τ(p₀, pₙ)
+- Combining: τ(p₀, p₁) + τ(p₁, p₂) + ... + τ(pₙ₋₁, pₙ) ≤ τ(p₀, pₙ)
 -/
 informal_lemma piecewise_linear_twin_paradox where
   deps := [`PiecewiseLinearWorldline,
            `PiecewiseLinearWorldline.straightLineProperTime,
-           `threePoint_twin_paradox, `fourPoint_twin_paradox]
+           `PiecewiseLinearWorldline.IsCausal,
+           `threePoint_twin_paradox, `fourPoint_twin_paradox,
+           `piecewise_linear_twin_paradox_three]
   tag := "7ROQ7"
 
 /-!

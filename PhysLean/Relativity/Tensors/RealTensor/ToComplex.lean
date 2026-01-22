@@ -127,7 +127,30 @@ transform compatibly under both actions.
 lemma toComplex_equivariant {n} {c : Fin n → realLorentzTensor.Color}
     (v : ℝT(3, c)) (Λ : SL(2, ℂ)) :
     Λ • (toComplex v) = toComplex (Lorentz.SL2C.toLorentzGroup Λ • v) := by
-  sorry
+  -- Use induction on pure tensors
+  apply Tensor.induction_on_pure (t := v)
+  · intro p
+    rw [actionT_pure]
+    -- For pure tensors, the action factors through each component
+    -- The equivariance follows from inclCongrRealLorentz_ρ for vectors
+    -- and the tensor product structure for higher rank
+    sorry
+  · intro r t ht
+    -- Scalar multiplication case: Λ • toComplex (r • t) = toComplex (r • toLorentzGroup Λ • t)
+    -- toComplex is semilinear: toComplex (r • t) = (r : ℂ) • toComplex t
+    simp only [LinearMap.map_smulₛₗ, Complex.ofRealHom_eq_coe, actionT_smul]
+    -- Now: Λ • ((r : ℂ) • toComplex t) = (r : ℂ) • toComplex (toLorentzGroup Λ • t)
+    -- Use SMulCommClass to commute the scalar (r : ℂ) with the action Λ
+    haveI : SMulCommClass SL(2,ℂ) ℂ (complexLorentzTensor.Tensor (colorToComplex ∘ c)) :=
+      SMulCommClass.symm ..
+    -- The goal is `Λ • (↑r • toComplex t) = ↑r • toComplex (toLorentzGroup Λ • t)`
+    -- Using smul_comm: m • n • a = n • m • a
+    have h1 : Λ • (↑r • toComplex t) = ↑r • (Λ • toComplex t) :=
+      smul_comm Λ (↑r : ℂ) (toComplex t)
+    -- h1 and the goal have the same expressions, just need to normalize
+    simp only [h1, ht]
+  · intro t1 t2 ht1 ht2
+    simp only [actionT_add, map_add, ht1, ht2]
 
 /-!
 
