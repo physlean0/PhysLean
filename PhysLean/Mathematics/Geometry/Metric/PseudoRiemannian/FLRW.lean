@@ -6,6 +6,7 @@ Authors: PhysLean Contributors
 
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Einstein
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.EnergyConditions
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Friedmann-Lemaitre-Robertson-Walker Cosmology
@@ -248,9 +249,7 @@ def isMilne (F : FLRWData) : Prop :=
 a(t) proportional to t^(2/3). This is the solution for matter-dominated flat universe. -/
 def isEinsteinDeSitter (F : FLRWData) : Prop :=
   F.curvature = SpatialCurvature.flat ∧
-  -- a(t) = C * t^(2/3) for some constant C > 0
-  ∃ C, C > 0 ∧ ∀ t₁ t₂, t₁ > 0 → t₂ > 0 →
-    (F.scaleFactor t₁ / F.scaleFactor t₂)^3 = (t₁ / t₂)^2
+  ∃ C, C > 0 ∧ ∀ t, t > 0 → F.scaleFactor t = C * Real.rpow t (2/3)
 
 /-- Radiation-dominated universe: a(t) proportional to t^(1/2). -/
 def isRadiationDominated (F : FLRWData) : Prop :=

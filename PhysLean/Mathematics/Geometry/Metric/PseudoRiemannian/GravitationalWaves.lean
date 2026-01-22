@@ -5,6 +5,7 @@ Authors: PhysLean Contributors
 -/
 
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Einstein
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Linearized Gravity and Gravitational Waves
@@ -264,13 +265,14 @@ structure BinaryGWSource where
   m₁_pos : m₁ > 0
   m₂_pos : m₂ > 0
 
-/-- The chirp mass M_c is defined by M_c^5 = (m_1 m_2)^3 / (m_1 + m_2).
-Equivalently: M_c = (m_1 m_2)^(3/5) / (m_1 + m_2)^(1/5).
+/-- The chirp mass M_c = (m_1 m_2)^(3/5) / (m_1 + m_2)^(1/5).
+Equivalently: M_c^5 = (m_1 m_2)^3 / (m_1 + m_2).
 This combination determines the GW signal amplitude and frequency evolution.
 
 The chirp mass is the most directly measurable quantity from GW observations
 because it determines the rate of frequency increase during inspiral. -/
-axiom BinaryGWSource.chirpMass (b : BinaryGWSource) : ℝ
+def BinaryGWSource.chirpMass (b : BinaryGWSource) : ℝ :=
+  Real.rpow (b.m₁ * b.m₂) (3/5) / Real.rpow (b.m₁ + b.m₂) (1/5)
 
 /-- Binary orbit decays due to GW emission: da/dt < 0.
 The orbital energy is carried away by gravitational radiation. -/
