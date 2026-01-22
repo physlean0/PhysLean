@@ -51,6 +51,7 @@ import PhysLean.Mathematics.Distribution.PowMul
 import PhysLean.Mathematics.FDerivCurry
 import PhysLean.Mathematics.Fin
 import PhysLean.Mathematics.Fin.Involutions
+import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.ADMFormalism
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.BlackHoleThermodynamics
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.CausalStructure
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Connection
@@ -61,6 +62,7 @@ import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.EnergyConditions
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.FLRW
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Geodesics
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.GravitationalWaves
+import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Kerr
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.KillingVector
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Ricci
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Schwarzschild
