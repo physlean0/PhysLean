@@ -64,11 +64,14 @@ import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Geodesics
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.GravitationalLensing
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.GravitationalWaves
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Kerr
+import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.KerrNewman
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.KillingVector
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.PerfectFluid
+import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.PostNewtonian
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.ReissnerNordstrom
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Ricci
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.Schwarzschild
+import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.TestsOfGR
 import PhysLean.Mathematics.Geometry.Metric.PseudoRiemannian.WeylTensor
 import PhysLean.Mathematics.Geometry.Metric.Riemannian.Defs
 import PhysLean.Mathematics.InnerProductSpace.Adjoint
