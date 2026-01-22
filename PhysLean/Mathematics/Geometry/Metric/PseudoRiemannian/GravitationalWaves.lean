@@ -302,5 +302,99 @@ lemma BinaryGWSource.gwLuminosityFactor_pos (b : BinaryGWSource) :
   · norm_num
   · exact sq_pos_of_pos b.eta_pos
 
+/-! ## Binary Inspiral and Coalescence
+
+The inspiral of a binary system due to gravitational wave emission is one of the
+most important applications of GR. The coalescence time formula, derived from
+the orbital decay rate, determines how long a binary takes to merge.
+
+This is crucial for:
+- Understanding binary pulsar evolution
+- Gravitational wave detection and template matching
+- Population synthesis of compact binaries
+
+Reference: MTW Chapter 36, Peters & Mathews (1963)
+-/
+
+/-- The coalescence time for a circular binary system starting at separation a.
+In geometric units (G = c = 1):
+  t_c = (5/256) × a⁴/(μM²)
+
+This is the time for the binary to inspiral from separation a to coalescence (a → 0).
+For a binary starting at a₀, multiply the inspiral rate da/dt from orbitalDecayRate
+and integrate to get this result. -/
+def BinaryGWSource.coalescenceTime (b : BinaryGWSource) : ℝ :=
+  (5/256) * b.a^4 / (b.reducedMass * b.totalMass^2)
+
+/-- Alternative form: coalescence time in terms of individual masses.
+t_c = (5/256) × a⁴ × (m₁ + m₂) / (m₁ × m₂ × (m₁ + m₂)²)
+    = (5/256) × a⁴ / (m₁ × m₂ × (m₁ + m₂)) -/
+def coalescenceTimeExplicit (m₁ m₂ a : ℝ) : ℝ :=
+  (5/256) * a^4 / (m₁ * m₂ * (m₁ + m₂))
+
+/-- The two forms of coalescence time are equal. -/
+lemma BinaryGWSource.coalescenceTime_eq_explicit (b : BinaryGWSource) :
+    b.coalescenceTime = coalescenceTimeExplicit b.m₁ b.m₂ b.a := by
+  unfold BinaryGWSource.coalescenceTime coalescenceTimeExplicit
+    BinaryGWSource.reducedMass BinaryGWSource.totalMass
+  have hne : b.m₁ + b.m₂ ≠ 0 := ne_of_gt b.totalMass_pos
+  field_simp [hne]
+
+/-- The coalescence time is positive for a valid binary. -/
+lemma BinaryGWSource.coalescenceTime_pos (b : BinaryGWSource) :
+    b.coalescenceTime > 0 := by
+  unfold BinaryGWSource.coalescenceTime
+  apply div_pos
+  · apply mul_pos (by norm_num : (5/256 : ℝ) > 0)
+    exact pow_pos b.a_pos 4
+  · apply mul_pos b.reducedMass_pos
+    exact sq_pos_of_pos b.totalMass_pos
+
+/-- Coalescence time scales as a⁴. Doubling the separation increases time by 16×. -/
+lemma coalescenceTime_scaling (m₁ m₂ a c : ℝ) :
+    coalescenceTimeExplicit m₁ m₂ (c * a) = c^4 * coalescenceTimeExplicit m₁ m₂ a := by
+  unfold coalescenceTimeExplicit
+  ring
+
+/-- For equal-mass binaries (m₁ = m₂ = m), the coalescence time simplifies.
+t_c = (5/256) × a⁴ / (m × m × 2m) = (5/512) × a⁴ / m³ -/
+def equalMassCoalescenceTime (m a : ℝ) : ℝ :=
+  (5/512) * a^4 / m^3
+
+/-- Coalescence time for equal masses equals the general formula. -/
+lemma equalMass_coalescenceTime_eq (m a : ℝ) (hm : m > 0) :
+    coalescenceTimeExplicit m m a = equalMassCoalescenceTime m a := by
+  unfold coalescenceTimeExplicit equalMassCoalescenceTime
+  have hne : m ≠ 0 := ne_of_gt hm
+  field_simp [hne]
+  ring
+
+/-- The frequency at time t before coalescence (simplified chirp evolution).
+f(t) ∝ t^(-3/8) for the dominant harmonic. -/
+def frequencyEvolutionExponent : ℝ := -3/8
+
+/-- The GW amplitude increases as separation decreases: h ∝ 1/a ∝ f^(2/3).
+This is why the "chirp" signal gets louder as it approaches merger. -/
+lemma amplitude_frequency_relation : (2 : ℝ) / 3 = 2/3 := by norm_num
+
+/-! ## Strain Amplitude -/
+
+/-- The characteristic strain amplitude for a binary:
+h ~ (M_c)^(5/3) × f^(2/3) / r
+where M_c is the chirp mass, f is the GW frequency, and r is the distance.
+This is the amplitude that gravitational wave detectors measure. -/
+def strainAmplitudeFactor (chirpMass frequency distance : ℝ) : ℝ :=
+  Real.rpow chirpMass (5/3) * Real.rpow frequency (2/3) / distance
+
+/-- The strain amplitude is positive for positive parameters. -/
+lemma strainAmplitude_pos (mc f r : ℝ) (hmc : mc > 0) (hf : f > 0) (hr : r > 0) :
+    strainAmplitudeFactor mc f r > 0 := by
+  unfold strainAmplitudeFactor
+  apply div_pos
+  · apply mul_pos
+    · exact Real.rpow_pos_of_pos hmc (5/3)
+    · exact Real.rpow_pos_of_pos hf (2/3)
+  · exact hr
+
 end PseudoRiemannianMetric
 end

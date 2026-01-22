@@ -278,5 +278,82 @@ lemma schwarzschild_factor_at_rs (S : SchwarzschildData) :
     unfold schwarzschildRadius; linarith [S.mass_pos]
   rw [div_self hne, sub_self]
 
+/-! ## Newtonian Limit
+
+The Schwarzschild metric reduces to the Newtonian approximation in the weak-field limit.
+For r >> r_s (equivalently, |Φ| << c² where Φ = -GM/r is the Newtonian potential), the
+metric component g_tt = -(1 - r_s/r) ≈ -(1 + 2Φ/c²) in SI units, or -(1 + 2Φ) in
+geometric units where c = G = 1.
+
+This connection is fundamental to understanding how GR contains Newtonian gravity as
+a limiting case. See MTW Chapter 25.
+
+-/
+
+/-- The Newtonian potential Φ = -M/r in geometric units (G = c = 1).
+In SI units this would be Φ = -GM/r. -/
+def newtonianPotentialAt (S : SchwarzschildData) (r : ℝ) : ℝ := -S.mass / r
+
+/-- The Newtonian potential is negative outside the horizon. -/
+lemma schwarzschild_newtonianPotential_neg (S : SchwarzschildData) (r : ℝ) (hr : r > 0) :
+    newtonianPotentialAt S r < 0 := by
+  unfold newtonianPotentialAt
+  simp only [neg_div]
+  exact neg_neg_of_pos (div_pos S.mass_pos hr)
+
+/-- The Schwarzschild factor equals 1 + 2Φ where Φ = -M/r is the Newtonian potential.
+This shows that g_tt = -(1 - 2M/r) = -(1 + 2Φ), the standard Newtonian limit form.
+
+This is the key connection between the Schwarzschild metric and Newtonian gravity:
+in geometric units, g_tt = -(1 + 2Φ) where Φ is the Newtonian gravitational potential. -/
+lemma schwarzschildFactor_eq_newtonianLimit (S : SchwarzschildData) (r : ℝ) (hr : r ≠ 0) :
+    schwarzschildFactor S.mass r = 1 + 2 * newtonianPotentialAt S r := by
+  unfold schwarzschildFactor schwarzschildRadius newtonianPotentialAt
+  field_simp
+  ring
+
+/-- The weak-field condition: r >> r_s, equivalently |Φ| << 1 (in geometric units).
+When this holds, the Schwarzschild metric is well-approximated by the linearized metric
+g_μν ≈ η_μν + h_μν where h_00 = -2Φ and h_ii = -2Φ. -/
+def isWeakField (S : SchwarzschildData) (r : ℝ) : Prop :=
+  r > 10 * S.rs  -- r >> r_s means Φ = -M/r is small
+
+/-- In the weak-field regime, the Schwarzschild factor is close to 1. -/
+lemma schwarzschildFactor_near_one (S : SchwarzschildData) (r : ℝ)
+    (hweak : isWeakField S r) : schwarzschildFactor S.mass r > 0.8 := by
+  unfold isWeakField SchwarzschildData.rs at hweak
+  unfold schwarzschildFactor schwarzschildRadius at *
+  have hmass : S.mass > 0 := S.mass_pos
+  -- hweak : r > 10 * (2 * S.mass) = 20 * S.mass
+  have hr20 : r > 20 * S.mass := by linarith
+  have hr : r > 0 := by linarith
+  have h : 2 * S.mass / r < 0.2 := by
+    have h1 : 2 * S.mass / r < 2 * S.mass / (20 * S.mass) := by
+      apply div_lt_div_of_pos_left
+      · linarith
+      · linarith
+      · exact hr20
+    have hne : S.mass ≠ 0 := ne_of_gt hmass
+    have h2 : 2 * S.mass / (20 * S.mass) = 0.1 := by
+      field_simp [hne]
+      ring
+    linarith
+  linarith
+
+/-- The radial coordinate r in terms of the Newtonian potential. -/
+lemma r_eq_neg_mass_div_potential (S : SchwarzschildData) (r : ℝ) (hr : r ≠ 0) :
+    r = -S.mass / newtonianPotentialAt S r := by
+  unfold newtonianPotentialAt
+  have hmass : S.mass ≠ 0 := ne_of_gt S.mass_pos
+  field_simp [hr, hmass]
+
+/-- The Schwarzschild radius in terms of Newtonian potential at r_s.
+At r = r_s, the potential Φ = -M/(2M) = -1/2. -/
+lemma newtonianPotential_at_horizon (S : SchwarzschildData) :
+    newtonianPotentialAt S S.rs = -1/2 := by
+  unfold newtonianPotentialAt SchwarzschildData.rs schwarzschildRadius
+  have hmass : S.mass ≠ 0 := ne_of_gt S.mass_pos
+  field_simp [hmass]
+
 end PseudoRiemannianMetric
 end
