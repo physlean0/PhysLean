@@ -212,10 +212,42 @@ noncomputable def hamiltonian : T.HilbertSpace →ₗ[ℂ] T.HilbertSpace :=
 
 -/
 
+/-- The adjoint of localizedComp |m⟩⟨n| is |n⟩⟨m|. -/
+lemma localizedComp_adjoint (m n : Fin T.N) (ψ φ : T.HilbertSpace) :
+    ⟪|m⟩⟨n| ψ, φ⟫_ℂ = ⟪ψ, |n⟩⟨m| φ⟫_ℂ := by
+  simp only [localizedComp, LinearMap.coe_mk, AddHom.coe_mk]
+  rw [inner_smul_left, inner_smul_right]
+  rw [inner_conj_symm]
+  ring
+
+/-- The diagonal term |n⟩⟨n| is self-adjoint. -/
+lemma localizedComp_self_adjoint (n : Fin T.N) (ψ φ : T.HilbertSpace) :
+    ⟪|n⟩⟨n| ψ, φ⟫_ℂ = ⟪ψ, |n⟩⟨n| φ⟫_ℂ :=
+  localizedComp_adjoint T n n ψ φ
+
 /-- The hamiltonian of the tight binding chain is hermitian. -/
-@[sorryful]
 lemma hamiltonian_hermitian (ψ φ : T.HilbertSpace) :
-    ⟪T.hamiltonian ψ, φ⟫_ℂ = ⟪ψ, T.hamiltonian φ⟫_ℂ := by sorry
+    ⟪T.hamiltonian ψ, φ⟫_ℂ = ⟪ψ, T.hamiltonian φ⟫_ℂ := by
+  simp only [hamiltonian, LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.coe_sum,
+    Finset.sum_apply, LinearMap.add_apply]
+  rw [inner_sub_left, inner_sub_right]
+  congr 1
+  · -- E0 term
+    simp only [Finset.smul_sum]
+    rw [sum_inner, inner_sum]
+    apply Finset.sum_congr rfl
+    intro n _
+    simp only [inner_smul_left_eq_smul, inner_smul_right_eq_smul]
+    rw [localizedComp_self_adjoint]
+  · -- t term
+    simp only [Finset.smul_sum, smul_add]
+    rw [sum_inner, inner_sum]
+    apply Finset.sum_congr rfl
+    intro n _
+    rw [inner_add_left, inner_add_right]
+    simp only [inner_smul_left_eq_smul, inner_smul_right_eq_smul]
+    rw [localizedComp_adjoint, localizedComp_adjoint]
+    ring
 
 /-!
 

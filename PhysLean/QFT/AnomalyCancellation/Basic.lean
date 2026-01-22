@@ -273,10 +273,10 @@ def linSolsIncl (χ : ACCSystemLinear) : χ.LinSols →ₗ[ℚ] χ.Charges where
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
-@[sorryful]
 lemma linSolsIncl_injective (χ : ACCSystemLinear) :
     Function.Injective χ.linSolsIncl := by
-  sorry
+  intro S T h
+  exact LinSols.ext h
 
 end ACCSystemLinear
 
