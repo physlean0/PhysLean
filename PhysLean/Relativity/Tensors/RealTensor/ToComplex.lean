@@ -104,7 +104,25 @@ open Matrix
 open MatrixGroups
 open complexLorentzTensor
 open Lorentz.SL2C in
-/-- The map `toComplex` is equivariant. -/
+/-- The map `toComplex` is equivariant with respect to the SL(2,ℂ) action on complex tensors
+and the corresponding Lorentz group action on real tensors.
+
+This is a foundational result for GR showing that complexifying real Lorentz tensors
+preserves the group action structure. The proof requires showing that basis elements
+transform compatibly under both actions.
+
+**Proof strategy:**
+1. Expand both sides using basis decomposition via `toComplex_eq_sum_basis`
+2. Use linearity of the group action to move it inside the sum
+3. Show that the action on complex basis elements corresponds to the action on real basis elements
+4. The key technical step is proving: `Λ • (basis_ℂ i) = basis_ℂ (transformed_index Λ i)`
+   where the transformation is induced by `toLorentzGroup Λ`
+
+**Required lemmas:**
+- How `Λ` acts on `Tensor.basis (S := complexLorentzTensor)`
+- How `toLorentzGroup Λ` acts on `Tensor.basis (S := realLorentzTensor)`
+- Compatibility of these actions through `colorToComplex` and `ComponentIdx.complexify`
+-/
 @[sorryful]
 lemma toComplex_equivariant {n} {c : Fin n → realLorentzTensor.Color}
     (v : ℝT(3, c)) (Λ : SL(2, ℂ)) :
