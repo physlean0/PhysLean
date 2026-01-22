@@ -8,7 +8,7 @@
 
 3. **Physics Spirit** - Always ensure you follow the spirit of the physics principles. Never reduce to something simpler, fake, or wrong, just because of errors in build process.  Never give up on doing proper physics, but you can always do a simpler/cleaner approach if that is still 100% not giving up on physics principles.
 
-4. **Research** - You should research online for papers and proofs to help you for complex proofs and to be sure you are following correct physics principles.
+4. **Research** - You should research online for papers and proofs to help you for complex proofs and to be sure you are following correct physics principles.  Use MCP playwright for accessing web pages that are difficult to fetch directly.
 
 5. **Informal vs. Sorry** - If a proof is too complex to formalize immediately, prioritize writing a clear "Informal Result" (English description within the Lean file) over using a sorry.  However, you must try every effort to convert all informal proofs and sorrys to formal proofs from definitions.
 
