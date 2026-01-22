@@ -16,9 +16,11 @@
 
 3. **Avoid explosion of assumptions** - Ensure you build on top of a foundation of lemmas etc. without making unnecessary explosion of assumptions.  Instead proof the assumptions from foundations.  E.g. avoid `axiom physics_fact : True` type axioms.
 
-4. **Document physics** - Include docstrings explaining the physical meaning, not just the mathematical definition.
+4. **Use lemmas alread build** -- Ensure maximum reuse of existing lemmas, theorems, etc. to overall build a deeply connected structure from low level assumptions to high-level theories.
 
-5. **Reference sources** - Cite textbooks (MTW, Wald, etc.) where applicable.
+5. **Document physics** - Include docstrings explaining the physical meaning, not just the mathematical definition.
+
+6. **Reference sources** - Cite textbooks (MTW, Wald, etc.) where applicable.
 
 ## Lean 4 / Mathlib Proof Standards
 
