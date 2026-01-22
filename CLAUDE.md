@@ -1,5 +1,11 @@
 # Claude Code Guidelines for PhysLean
 
+## Overall
+
+1. If asked to contniue and have semi-formals or informals just made or mentioned, then work hard on formalizing them.
+
+2. If asked to continue and no obvious work to do, then read through this CLAUDE.md file, go through the code base, and think about expanding to proofs from MTW for GR and proofs for quantum information (both down to basic assumptions progressively up through no-go theorems and other proofs in the literature related to quantum information, thermodynamics to GR, etc.)
+
 ## Code Quality
 
 1. **Avoid `sorry`** - Always try to prove lemmas properly. Only use `sorry` as a last resort for genuinely difficult proofs that require significant mathematical machinery not yet available.  Don't leave sorry's that can be proven.  Don't assume something is non-trivial until you try hard.
@@ -41,7 +47,7 @@ Your goal is **logical correctness with minimal assumptions**, not creativity.
 
 ### Hard constraints (do not violate):
 
-* **Do NOT introduce new axioms**, `axiom`, `sorry`, or `admit`.
+* **Do NOT introduce new axioms**, `axiom`, `sorry`, or `admit` if possible, try very hard to avoid.
 * **Do NOT add assumptions** beyond those explicitly stated in the theorem **unless absolutely necessary**.
 * If additional assumptions are needed, **stop and explain** why, and propose the **weakest possible ones**.
 * **Reuse existing lemmas** from mathlib / PhysLean whenever possible.
