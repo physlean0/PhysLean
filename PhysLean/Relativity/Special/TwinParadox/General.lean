@@ -433,32 +433,43 @@ theorem piecewise_linear_twin_paradox_three (p₀ p₁ p₂ : SpaceTime 3)
     List.getLast_cons_cons, List.getLast_singleton]
   exact threePoint_twin_paradox p₀ p₁ p₂ h02 h01 h12
 
-/-- **Piecewise Linear Twin Paradox (Semi-formal)**
+/-- **Piecewise Linear Twin Paradox (General)**
 
-For any causally valid piecewise linear worldline with arbitrarily many points,
-the total proper time is at most the straight-line proper time from start to end.
+For a causally valid piecewise linear worldline with n ≥ 2 points,
+the total proper time is at most the straight-line proper time.
 
-This is the general form of the twin paradox: taking any detour through spacetime
-(visiting intermediate points along a causal path) results in less or equal
-elapsed proper time compared to traveling directly.
-
-The proof requires induction on the number of points, using `threePoint_twin_paradox`
-at each step. The base case is n=2 (trivial equality), and the inductive step
-uses the three-point inequality to combine proper times.
-
-**Proof sketch:**
-For points p₀, p₁, ..., pₙ:
-- By IH: τ(p₁, p₂) + ... + τ(pₙ₋₁, pₙ) ≤ τ(p₁, pₙ)
-- By three-point: τ(p₀, p₁) + τ(p₁, pₙ) ≤ τ(p₀, pₙ)
-- Combining: τ(p₀, p₁) + τ(p₁, p₂) + ... + τ(pₙ₋₁, pₙ) ≤ τ(p₀, pₙ)
--/
-informal_lemma piecewise_linear_twin_paradox where
-  deps := [`PiecewiseLinearWorldline,
-           `PiecewiseLinearWorldline.straightLineProperTime,
-           `PiecewiseLinearWorldline.IsCausal,
-           `threePoint_twin_paradox, `fourPoint_twin_paradox,
-           `piecewise_linear_twin_paradox_three]
-  tag := "7ROQ7"
+**Proof strategy:**
+The proof uses induction on the list length, applying `threePoint_twin_paradox`
+at each step. For a list `p₀ :: p₁ :: tail`:
+- By IH on `p₁ :: tail`: sum of proper times from p₁ ≤ properTime p₁ (last point)
+- By three-point on (p₀, p₁, last): properTime p₀ p₁ + properTime p₁ (last) ≤ properTime p₀ (last)
+- Combining: total proper time ≤ straight-line proper time -/
+@[sorryful]
+theorem piecewise_linear_twin_paradox (W : PiecewiseLinearWorldline 3) (hcausal : W.IsCausal) :
+    W.totalProperTime ≤ W.straightLineProperTime := by
+  -- Unfold definitions
+  unfold PiecewiseLinearWorldline.totalProperTime
+  unfold PiecewiseLinearWorldline.straightLineProperTime
+  unfold PiecewiseLinearWorldline.startPoint
+  unfold PiecewiseLinearWorldline.endPoint
+  have hlen := W.nonempty
+  obtain ⟨points, hne⟩ := W
+  simp only at hlen
+  -- Induction on the list structure
+  match hp : points with
+  | [] => simp at hlen
+  | [_] => simp at hlen
+  | [p₀, p₁] =>
+    -- Base case: exactly 2 points, proper times are equal
+    simp [List.zip_cons_cons, List.tail_cons, List.zip_nil_right]
+  | p₀ :: p₁ :: p₂ :: rest =>
+    -- Inductive case: at least 3 points
+    -- The proof requires:
+    -- 1. IH: totalProperTime (p₁ :: p₂ :: rest) ≤ properTime p₁ (last)
+    -- 2. Three-point: properTime p₀ p₁ + properTime p₁ (last) ≤ properTime p₀ (last)
+    -- 3. Causality for the sub-worldline
+    -- This requires well-founded recursion on list length
+    sorry
 
 /-!
 

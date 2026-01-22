@@ -158,10 +158,7 @@ lemma toComplex_equivariant {n} {c : Fin n → realLorentzTensor.Color}
       SMulCommClass.symm ..
     -- The goal is `Λ • (↑r • toComplex t) = ↑r • toComplex (toLorentzGroup Λ • t)`
     -- Using smul_comm: m • n • a = n • m • a
-    have h1 : Λ • (↑r • toComplex t) = ↑r • (Λ • toComplex t) :=
-      smul_comm Λ (↑r : ℂ) (toComplex t)
-    -- h1 and the goal have the same expressions, just need to normalize
-    simp only [h1, ht]
+    rw [smul_comm Λ (↑r : ℂ) (toComplex t), ht]
   · intro t1 t2 ht1 ht2
     simp only [actionT_add, map_add, ht1, ht2]
 
