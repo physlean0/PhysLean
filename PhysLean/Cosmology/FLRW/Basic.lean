@@ -169,14 +169,34 @@ noncomputable def decelerationParameter (a : ℝ → ℝ) (t : ℝ) : ℝ :=
     - (deriv (deriv a) t * a t) / (deriv a t)^2
 
 /-- The deceleration parameter is equal to `- (1 + (dₜ H)/H^2)`. -/
-informal_lemma decelerationParameter_eq_one_plus_hubbleConstant where
-  deps := []
-  tag := "6Z23H"
+lemma decelerationParameter_eq_one_plus_hubbleConstant (a : ℝ → ℝ) (t : ℝ)
+    (ha : DifferentiableAt ℝ a t)
+    (ha' : DifferentiableAt ℝ (deriv a) t)
+    (ha_ne : a t ≠ 0)
+    (hda_ne : deriv a t ≠ 0) :
+    decelerationParameter a t = -(1 + deriv (hubbleConstant a) t / (hubbleConstant a t)^2) := by
+  have h_H_eq : hubbleConstant a = (fun t => deriv a t) / (fun t => a t) := rfl
+  have h_deriv_H : deriv (hubbleConstant a) t =
+      (deriv (deriv a) t * a t - deriv a t * deriv a t) / (a t)^2 := by
+    rw [h_H_eq]
+    rw [deriv_div ha' ha ha_ne]
+  simp only [decelerationParameter, hubbleConstant, h_deriv_H]
+  field_simp [ha_ne, hda_ne]
+  ring
 
 /-- The time evolution of the hubble parameter is equal to `dₜ H = - H^2 (1 + q)`. -/
-informal_lemma time_evolution_hubbleConstant where
-  deps := []
-  tag := "6Z3BS"
+lemma time_evolution_hubbleConstant (a : ℝ → ℝ) (t : ℝ)
+    (ha : DifferentiableAt ℝ a t)
+    (ha' : DifferentiableAt ℝ (deriv a) t)
+    (ha_ne : a t ≠ 0)
+    (hda_ne : deriv a t ≠ 0) :
+    deriv (hubbleConstant a) t = - (hubbleConstant a t)^2 * (1 + decelerationParameter a t) := by
+  have h := decelerationParameter_eq_one_plus_hubbleConstant a t ha ha' ha_ne hda_ne
+  have hH_ne : hubbleConstant a t ≠ 0 := by
+    simp only [hubbleConstant]
+    exact div_ne_zero hda_ne ha_ne
+  field_simp [hH_ne] at h ⊢
+  linarith [h]
 
 /-- There exists a time at which the hubble constant decreases if and only if
   there exists a time where the deceleration parameter is less then `-1`. -/

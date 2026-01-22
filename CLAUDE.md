@@ -2,7 +2,7 @@
 
 ## Code Quality
 
-1. **Avoid `sorry`** - Always try to prove lemmas properly. Only use `sorry` as a last resort for genuinely difficult proofs that require significant mathematical machinery not yet available.  Don't leave sorry's that can be proven.
+1. **Avoid `sorry`** - Always try to prove lemmas properly. Only use `sorry` as a last resort for genuinely difficult proofs that require significant mathematical machinery not yet available.  Don't leave sorry's that can be proven.  Don't assume something is non-trivial until you try hard.
 
 2. **Use proper imports** - Don't work around missing functionality. Import the appropriate Mathlib modules (e.g., `Mathlib.Analysis.SpecialFunctions.Pow.Real` for `Real.rpow`).
 

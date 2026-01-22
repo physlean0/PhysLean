@@ -64,9 +64,17 @@ def ageGap : ℝ := T.properTimeTwinA - T.properTimeTwinB
 TODO "6V2UQ" "Find the conditions for which the age gap for the twin paradox is zero."
 
 /-- In the twin paradox with instantaneous acceleration, Twin A is always older
-  then Twin B. -/
+  then Twin B.
+
+  Proof sketch: Uses the reverse triangle inequality for timelike vectors in Minkowski space.
+  Let u = twinBMid - startPoint and v = endPoint - twinBMid, so u + v = endPoint - startPoint.
+  For future-directed timelike vectors, the reverse triangle inequality gives:
+    √⟪u + v, u + v⟫ₘ ≥ √⟪u, u⟫ₘ + √⟪v, v⟫ₘ
+  Therefore properTimeTwinA ≥ properTimeTwinB, and ageGap ≥ 0.
+  The key lemmas are `reverse_cauchy_schwarz` and `reverse_triangle_ineq` in TimeLike.lean.
+-/
 informal_lemma ageGap_nonneg where
-  deps := [``ageGap]
+  deps := [``ageGap, ``reverse_cauchy_schwarz, ``reverse_triangle_ineq]
   tag := "7ROVE"
 
 /-!
