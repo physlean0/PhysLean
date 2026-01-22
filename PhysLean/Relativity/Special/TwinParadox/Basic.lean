@@ -63,19 +63,158 @@ def ageGap : ℝ := T.properTimeTwinA - T.properTimeTwinB
 
 TODO "6V2UQ" "Find the conditions for which the age gap for the twin paradox is zero."
 
+set_option maxHeartbeats 2000000 in
 /-- In the twin paradox with instantaneous acceleration, Twin A is always older
-  then Twin B.
-
-  Proof sketch: Uses the reverse triangle inequality for timelike vectors in Minkowski space.
-  Let u = twinBMid - startPoint and v = endPoint - twinBMid, so u + v = endPoint - startPoint.
-  For future-directed timelike vectors, the reverse triangle inequality gives:
-    √⟪u + v, u + v⟫ₘ ≥ √⟪u, u⟫ₘ + √⟪v, v⟫ₘ
-  Therefore properTimeTwinA ≥ properTimeTwinB, and ageGap ≥ 0.
-  The key lemmas are `reverse_cauchy_schwarz` and `reverse_triangle_ineq` in TimeLike.lean.
--/
-informal_lemma ageGap_nonneg where
-  deps := [``ageGap, ``reverse_cauchy_schwarz, ``reverse_triangle_ineq]
-  tag := "7ROVE"
+  then Twin B. Uses the reverse triangle inequality for timelike vectors. -/
+lemma ageGap_nonneg : 0 ≤ T.ageGap := by
+  unfold ageGap properTimeTwinA properTimeTwinB properTime
+  have h1 := T.twinBMid_causallyFollows_startPoint
+  have h2 := T.endPoint_causallyFollows_twinBMid
+  have h3 := T.endPoint_causallyFollows_startPoint
+  simp only [causallyFollows, interiorFutureLightCone, futureLightConeBoundary,
+    Set.mem_setOf_eq] at h1 h2 h3
+  set u := T.twinBMid - T.startPoint with hu_def
+  set v := T.endPoint - T.twinBMid with hv_def
+  have h_sum : u + v = T.endPoint - T.startPoint := by
+    apply funext
+    intro i
+    simp only [hu_def, hv_def]
+    show (T.twinBMid i - T.startPoint i) + (T.endPoint i - T.twinBMid i) =
+         T.endPoint i - T.startPoint i
+    ring
+  rcases h1 with ⟨hu_tl, hu_pos⟩ | ⟨hu_ll, hu_nn⟩ <;>
+  rcases h2 with ⟨hv_tl, hv_pos⟩ | ⟨hv_ll, hv_nn⟩ <;>
+  rcases h3 with ⟨huv_tl, _⟩ | ⟨huv_ll, _⟩
+  · -- All timelike: use reverse triangle inequality
+    have huv_tl' : causalCharacter (u + v) = CausalCharacter.timeLike := by rw [h_sum]; exact huv_tl
+    have h_rti := reverse_triangle_ineq u v hu_tl hv_tl huv_tl' hu_pos hv_pos
+    calc 0 ≤ √⟪u + v, u + v⟫ₘ - (√⟪u, u⟫ₘ + √⟪v, v⟫ₘ) := by linarith
+      _ = √⟪T.endPoint - T.startPoint, T.endPoint - T.startPoint⟫ₘ -
+          (√⟪T.twinBMid - T.startPoint, T.twinBMid - T.startPoint⟫ₘ +
+           √⟪T.endPoint - T.twinBMid, T.endPoint - T.twinBMid⟫ₘ) := by rw [h_sum]
+  · -- u, v timelike but u+v lightlike: contradiction
+    exfalso
+    have h_rcs := reverse_cauchy_schwarz u v hu_tl hv_tl hu_pos hv_pos
+    have h_expand : ⟪u + v, u + v⟫ₘ = ⟪u, u⟫ₘ + 2 * ⟪u, v⟫ₘ + ⟪v, v⟫ₘ := by
+      simp only [minkowskiProduct_apply, minkowskiProductMap_add_snd, minkowskiProductMap_symm]; ring
+    have hu_pos' := (timeLike_iff_norm_sq_pos u).mp hu_tl
+    have hv_pos' := (timeLike_iff_norm_sq_pos v).mp hv_tl
+    have huv_ll' : causalCharacter (u + v) = CausalCharacter.lightLike := by rw [h_sum]; exact huv_ll
+    have huv_zero := (lightLike_iff_norm_sq_zero (u + v)).mp huv_ll'
+    have h_sqrt_prod : √⟪u, u⟫ₘ * √⟪v, v⟫ₘ ≥ 0 :=
+      mul_nonneg (sqrt_nonneg ⟪u, u⟫ₘ) (sqrt_nonneg ⟪v, v⟫ₘ)
+    linarith [h_rcs, sqrt_nonneg ⟪u, u⟫ₘ, sqrt_nonneg ⟪v, v⟫ₘ, h_sqrt_prod]
+  · -- u timelike, v lightlike, u+v timelike
+    have hv0 : ⟪v, v⟫ₘ = 0 := (lightLike_iff_norm_sq_zero v).mp hv_ll
+    have huv_tl' : causalCharacter (u + v) = CausalCharacter.timeLike := by rw [h_sum]; exact huv_tl
+    have h_expand : ⟪u + v, u + v⟫ₘ = ⟪u, u⟫ₘ + 2 * ⟪u, v⟫ₘ := by
+      have : ⟪u + v, u + v⟫ₘ = ⟪u, u⟫ₘ + 2 * ⟪u, v⟫ₘ + ⟪v, v⟫ₘ := by
+        simp only [minkowskiProduct_apply, minkowskiProductMap_add_snd, minkowskiProductMap_symm]; ring
+      linarith
+    have h_uv : ⟪u, v⟫ₘ ≥ 0 := by
+      rw [minkowskiProduct_eq_timeComponent_spatialPart]
+      have h_cs := real_inner_le_norm (spatialPart u) (spatialPart v)
+      have hu_bd := timelike_future_spatial_bound hu_tl hu_pos
+      have hv_eq : timeComponent v = ‖spatialPart v‖ := by
+        have := (lightLike_iff_norm_sq_zero v).mp hv_ll
+        rw [minkowskiProduct_self_eq_timeComponent_spatialPart] at this
+        simp only [Real.norm_eq_abs] at this
+        have h_sq : |timeComponent v| ^ 2 = timeComponent v ^ 2 := sq_abs _
+        nlinarith [sq_nonneg (timeComponent v - ‖spatialPart v‖),
+                   sq_nonneg (timeComponent v + ‖spatialPart v‖), norm_nonneg (spatialPart v), hv_nn]
+      nlinarith [norm_nonneg (spatialPart u), norm_nonneg (spatialPart v)]
+    have h_ge : ⟪T.endPoint - T.startPoint, T.endPoint - T.startPoint⟫ₘ ≥ ⟪u, u⟫ₘ := by
+      rw [← h_sum, h_expand]; linarith
+    rw [hv0, sqrt_zero, _root_.add_zero]
+    exact sub_nonneg.mpr (sqrt_le_sqrt h_ge)
+  · -- u timelike, v lightlike, u+v lightlike: contradiction
+    -- A future-directed timelike + future-directed lightlike cannot be lightlike
+    exfalso
+    have huv_ll' : causalCharacter (u + v) = CausalCharacter.lightLike := by rw [h_sum]; exact huv_ll
+    have hu_pos' := (timeLike_iff_norm_sq_pos u).mp hu_tl
+    have hv0 : ⟪v, v⟫ₘ = 0 := (lightLike_iff_norm_sq_zero v).mp hv_ll
+    have huv0 : ⟪u + v, u + v⟫ₘ = 0 := (lightLike_iff_norm_sq_zero (u + v)).mp huv_ll'
+    have h_expand : ⟪u + v, u + v⟫ₘ = ⟪u, u⟫ₘ + 2 * ⟪u, v⟫ₘ + ⟪v, v⟫ₘ := by
+      simp only [minkowskiProduct_apply, minkowskiProductMap_add_snd, minkowskiProductMap_symm]; ring
+    -- For future-directed timelike u and lightlike v on boundary: ⟪u,v⟫ₘ ≥ 0
+    -- with equality only if v = 0, which would make u+v = u timelike (contradiction)
+    have h_uv_nonneg : ⟪u, v⟫ₘ ≥ 0 := by
+      rw [minkowskiProduct_eq_timeComponent_spatialPart]
+      have h_cs := real_inner_le_norm (spatialPart u) (spatialPart v)
+      have hu_bd := timelike_future_spatial_bound hu_tl hu_pos
+      have hv_eq : timeComponent v = ‖spatialPart v‖ := by
+        have := (lightLike_iff_norm_sq_zero v).mp hv_ll
+        rw [minkowskiProduct_self_eq_timeComponent_spatialPart] at this
+        simp only [Real.norm_eq_abs] at this
+        have h_sq : |timeComponent v| ^ 2 = timeComponent v ^ 2 := sq_abs _
+        nlinarith [sq_nonneg (timeComponent v - ‖spatialPart v‖),
+                   sq_nonneg (timeComponent v + ‖spatialPart v‖), norm_nonneg (spatialPart v), hv_nn]
+      nlinarith [norm_nonneg (spatialPart u), norm_nonneg (spatialPart v)]
+    -- From h_expand and hv0: ⟪u+v, u+v⟫ₘ = ⟪u,u⟫ₘ + 2⟪u,v⟫ₘ
+    -- From huv0: ⟪u,u⟫ₘ + 2⟪u,v⟫ₘ = 0
+    -- Since ⟪u,u⟫ₘ > 0 and ⟪u,v⟫ₘ ≥ 0, this is impossible
+    linarith
+  · -- u lightlike, v timelike, u+v timelike
+    have hu0 : ⟪u, u⟫ₘ = 0 := (lightLike_iff_norm_sq_zero u).mp hu_ll
+    have huv_tl' : causalCharacter (u + v) = CausalCharacter.timeLike := by rw [h_sum]; exact huv_tl
+    have h_expand : ⟪u + v, u + v⟫ₘ = 2 * ⟪u, v⟫ₘ + ⟪v, v⟫ₘ := by
+      have : ⟪u + v, u + v⟫ₘ = ⟪u, u⟫ₘ + 2 * ⟪u, v⟫ₘ + ⟪v, v⟫ₘ := by
+        simp only [minkowskiProduct_apply, minkowskiProductMap_add_snd, minkowskiProductMap_symm]; ring
+      linarith
+    have h_uv : ⟪u, v⟫ₘ ≥ 0 := by
+      rw [minkowskiProduct_eq_timeComponent_spatialPart]
+      have h_cs := real_inner_le_norm (spatialPart u) (spatialPart v)
+      have hv_bd := timelike_future_spatial_bound hv_tl hv_pos
+      have hu_eq : timeComponent u = ‖spatialPart u‖ := by
+        have := (lightLike_iff_norm_sq_zero u).mp hu_ll
+        rw [minkowskiProduct_self_eq_timeComponent_spatialPart] at this
+        simp only [Real.norm_eq_abs] at this
+        have h_sq : |timeComponent u| ^ 2 = timeComponent u ^ 2 := sq_abs _
+        nlinarith [sq_nonneg (timeComponent u - ‖spatialPart u‖),
+                   sq_nonneg (timeComponent u + ‖spatialPart u‖), norm_nonneg (spatialPart u), hu_nn]
+      nlinarith [norm_nonneg (spatialPart u), norm_nonneg (spatialPart v)]
+    have h_ge : ⟪T.endPoint - T.startPoint, T.endPoint - T.startPoint⟫ₘ ≥ ⟪v, v⟫ₘ := by
+      rw [← h_sum, h_expand]; linarith
+    rw [hu0, sqrt_zero, _root_.zero_add]
+    exact sub_nonneg.mpr (sqrt_le_sqrt h_ge)
+  · -- u lightlike, v timelike, u+v lightlike: contradiction
+    -- A future-directed lightlike + future-directed timelike cannot be lightlike
+    exfalso
+    have huv_ll' : causalCharacter (u + v) = CausalCharacter.lightLike := by rw [h_sum]; exact huv_ll
+    have hv_pos' := (timeLike_iff_norm_sq_pos v).mp hv_tl
+    have hu0 : ⟪u, u⟫ₘ = 0 := (lightLike_iff_norm_sq_zero u).mp hu_ll
+    have huv0 : ⟪u + v, u + v⟫ₘ = 0 := (lightLike_iff_norm_sq_zero (u + v)).mp huv_ll'
+    have h_expand : ⟪u + v, u + v⟫ₘ = ⟪u, u⟫ₘ + 2 * ⟪u, v⟫ₘ + ⟪v, v⟫ₘ := by
+      simp only [minkowskiProduct_apply, minkowskiProductMap_add_snd, minkowskiProductMap_symm]; ring
+    -- For future-directed lightlike u on boundary and timelike v: ⟪u,v⟫ₘ ≥ 0
+    -- with equality only if u = 0, which would make u+v = v timelike (contradiction)
+    have h_uv_nonneg : ⟪u, v⟫ₘ ≥ 0 := by
+      rw [minkowskiProduct_eq_timeComponent_spatialPart]
+      have h_cs := real_inner_le_norm (spatialPart u) (spatialPart v)
+      have hv_bd := timelike_future_spatial_bound hv_tl hv_pos
+      have hu_eq : timeComponent u = ‖spatialPart u‖ := by
+        have := (lightLike_iff_norm_sq_zero u).mp hu_ll
+        rw [minkowskiProduct_self_eq_timeComponent_spatialPart] at this
+        simp only [Real.norm_eq_abs] at this
+        have h_sq : |timeComponent u| ^ 2 = timeComponent u ^ 2 := sq_abs _
+        nlinarith [sq_nonneg (timeComponent u - ‖spatialPart u‖),
+                   sq_nonneg (timeComponent u + ‖spatialPart u‖), norm_nonneg (spatialPart u), hu_nn]
+      nlinarith [norm_nonneg (spatialPart u), norm_nonneg (spatialPart v)]
+    -- From h_expand and hu0: ⟪u+v, u+v⟫ₘ = 2⟪u,v⟫ₘ + ⟪v,v⟫ₘ
+    -- From huv0: 2⟪u,v⟫ₘ + ⟪v,v⟫ₘ = 0
+    -- Since ⟪v,v⟫ₘ > 0 and ⟪u,v⟫ₘ ≥ 0, this is impossible
+    linarith
+  · -- Both lightlike, u+v timelike
+    have hu0 : ⟪u, u⟫ₘ = 0 := (lightLike_iff_norm_sq_zero u).mp hu_ll
+    have hv0 : ⟪v, v⟫ₘ = 0 := (lightLike_iff_norm_sq_zero v).mp hv_ll
+    simp only [hu0, hv0, sqrt_zero, _root_.zero_add, sub_nonneg, sqrt_nonneg]
+  · -- All lightlike
+    have hu0 : ⟪u, u⟫ₘ = 0 := (lightLike_iff_norm_sq_zero u).mp hu_ll
+    have hv0 : ⟪v, v⟫ₘ = 0 := (lightLike_iff_norm_sq_zero v).mp hv_ll
+    have huv_ll' : causalCharacter (u + v) = CausalCharacter.lightLike := by rw [h_sum]; exact huv_ll
+    have huv0 : ⟪u + v, u + v⟫ₘ = 0 := (lightLike_iff_norm_sq_zero (u + v)).mp huv_ll'
+    have huv0' : ⟪T.endPoint - T.startPoint, T.endPoint - T.startPoint⟫ₘ = 0 := by rw [← h_sum]; exact huv0
+    simp only [hu0, hv0, huv0', sqrt_zero, _root_.zero_add, sub_self, le_refl]
 
 /-!
 

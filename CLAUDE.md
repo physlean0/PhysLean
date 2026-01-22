@@ -66,6 +66,18 @@ Your goal is **logical correctness with minimal assumptions**, not creativity.
 4. Only then, **write the Lean proof**.
 5. If the proof fails, **explain exactly where and why**, without adding assumptions silently.
 
+### Handling Lean Deterministic Timeouts:
+
+* When a proof times out with Lean's default `maxHeartbeats` (200,000), try increasing the limit progressively:
+  - First try `set_option maxHeartbeats 400000 in`
+  - If still timing out, try `set_option maxHeartbeats 2000000 in` or even larger (up to 10,000,000)
+  - The overall timeout (wall-clock time of ~10 minutes) is the ultimate constraint, not heartbeats
+* If a proof still exceeds 10M heartbeats, consider reworking the proof structure:
+  - Break complex proofs into helper lemmas
+  - Use more explicit intermediate steps
+  - Avoid deeply nested case analysis when possible
+* Note: Heartbeats are a measure of computational steps, not wall-clock time. A 2M heartbeat proof might take only 20-120 seconds of actual time.
+
 ### Additional constraints for PhysLean:
 
 * Prefer **PhysLean definitions** over redefining physics objects.
