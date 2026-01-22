@@ -98,4 +98,9 @@ Your goal is **logical correctness with minimal assumptions**, not creativity.
 
 ### Commit messages
 
+* Run ./scripts/lint-all.sh and fix all linter issues before committing
 * Avoid mentions of claude as coauthor in commit messages (intent is most of direction is human but actual code is claude in all cases, no need to repeat)
+
+### Reviews
+
+* When addressing reviews, respond to any comments, then resolve the issues in code (or respond directly if just question), then mark the comments as resolved.
