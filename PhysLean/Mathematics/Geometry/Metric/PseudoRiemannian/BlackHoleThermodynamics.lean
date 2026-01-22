@@ -153,9 +153,19 @@ noncomputable def surfaceGravity (bh : BlackHole) : ℝ :=
     0  -- Extremal case
 
 /-- The surface gravity of a Schwarzschild black hole is 1/(4M). -/
-lemma surfaceGravity_schwarzschild (bh : BlackHole) (_hS : bh.isSchwarzschild) :
+lemma surfaceGravity_schwarzschild (bh : BlackHole) (hS : bh.isSchwarzschild) :
     surfaceGravity bh = 1 / (4 * bh.mass) := by
-  sorry
+  unfold surfaceGravity BlackHole.spinParameter
+  have hM_pos : bh.mass > 0 := bh.mass_pos
+  have hM_sq_pos : bh.mass^2 > 0 := sq_pos_of_pos hM_pos
+  -- For Schwarzschild: J = 0 and Q = 0, so spinParameter = 0
+  simp only [hS.1, hS.2, zero_div]
+  -- discriminant = M^2 - 0^2 - 0^2 = M^2 > 0, so we take the 'then' branch
+  simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, sub_zero, hM_sq_pos,
+    ↓reduceIte, Real.sqrt_sq (le_of_lt hM_pos)]
+  -- r_plus = M + M = 2M, so we get M / (2M * 2M) = 1/(4M)
+  field_simp
+  ring
 
 /-- An extremal black hole has zero surface gravity. -/
 axiom surfaceGravity_extremal (bh : BlackHole) (hE : bh.isExtremal) :
@@ -241,9 +251,19 @@ def bekensteinHawkingEntropy (bh : BlackHole) : ℝ :=
   horizonArea bh / 4
 
 /-- The entropy of a Schwarzschild black hole is S = 4 pi M^2. -/
-lemma entropy_schwarzschild (bh : BlackHole) (_hS : bh.isSchwarzschild) :
+lemma entropy_schwarzschild (bh : BlackHole) (hS : bh.isSchwarzschild) :
     bekensteinHawkingEntropy bh = 4 * Real.pi * bh.mass^2 := by
-  sorry
+  unfold bekensteinHawkingEntropy horizonArea outerHorizonRadius BlackHole.spinParameter
+  have hM_pos : bh.mass > 0 := bh.mass_pos
+  have hM_sq_pos : bh.mass^2 > 0 := sq_pos_of_pos hM_pos
+  -- For Schwarzschild: J = 0 so spinParameter = 0, and Q = 0
+  simp only [hS.1, hS.2, zero_div]
+  -- max (M^2 - 0^2 - 0^2) 0 = M^2
+  have hmax : max (bh.mass^2) 0 = bh.mass^2 := max_eq_left (le_of_lt hM_sq_pos)
+  simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, sub_zero, hmax,
+    Real.sqrt_sq (le_of_lt hM_pos), add_zero]
+  -- Now we have 4 * π * ((M + M)^2 + 0) / 4 = 4 * π * M^2
+  ring
 
 /-- The entropy satisfies the first law: dS = dM/T (for fixed J, Q). -/
 axiom entropy_first_law (bh : BlackHole) :
@@ -303,8 +323,8 @@ axiom information_paradox :
 /-- The Page time: the time at which half the initial entropy has been radiated.
 After the Page time, the von Neumann entropy of the radiation should start decreasing
 if information is preserved. -/
-def pageTime (bh : BlackHole) : ℝ :=
-  evaporationTime bh sorry / 2  -- Roughly half the evaporation time
+def pageTime (bh : BlackHole) (hS : bh.isSchwarzschild) : ℝ :=
+  evaporationTime bh hS / 2  -- Roughly half the evaporation time
 
 /-! ## Thermodynamic Analogies -/
 

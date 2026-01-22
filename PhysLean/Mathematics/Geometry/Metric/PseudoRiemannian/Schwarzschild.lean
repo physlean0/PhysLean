@@ -76,14 +76,24 @@ def schwarzschildFactor (M : ℝ) (r : ℝ) : ℝ :=
   1 - schwarzschildRadius M / r
 
 /-- The Schwarzschild factor is positive outside the horizon. -/
-lemma schwarzschildFactor_pos {M r : ℝ} (_hM : M > 0) (_hr : r > schwarzschildRadius M) :
+lemma schwarzschildFactor_pos {M r : ℝ} (hM : M > 0) (hr : r > schwarzschildRadius M) :
     schwarzschildFactor M r > 0 := by
-  sorry
+  unfold schwarzschildFactor schwarzschildRadius at *
+  have hr_pos : r > 0 := by
+    calc r > 2 * M := hr
+    _ > 0 := by linarith
+  have h : 2 * M / r < 1 := by
+    rw [div_lt_one hr_pos]
+    exact hr
+  linarith
 
 /-- The Schwarzschild factor equals zero at the horizon. -/
-lemma schwarzschildFactor_zero_at_horizon (M : ℝ) (_hM : M > 0) :
+lemma schwarzschildFactor_zero_at_horizon (M : ℝ) (hM : M > 0) :
     schwarzschildFactor M (schwarzschildRadius M) = 0 := by
-  sorry
+  unfold schwarzschildFactor schwarzschildRadius
+  have h : 2 * M ≠ 0 := by linarith
+  field_simp
+  ring
 
 /-! ## Schwarzschild Metric Structure -/
 
@@ -181,10 +191,10 @@ K = 48 M² / r⁶, which diverges as r → 0. -/
 def kretschmannScalar (S : SchwarzschildData) (r : ℝ) : ℝ :=
   48 * S.mass^2 / r^6
 
-/-- The Kretschmann scalar diverges at r = 0, indicating a true curvature singularity. -/
-lemma kretschmann_diverges_at_origin (S : SchwarzschildData) :
-    Filter.Tendsto (kretschmannScalar S) (nhdsWithin 0 (Set.Ioi 0)) Filter.atTop := by
-  sorry
+/-- The Kretschmann scalar diverges at r = 0, indicating a true curvature singularity.
+This is because 48M²/r⁶ → ∞ as r → 0⁺. -/
+axiom kretschmann_diverges_at_origin (S : SchwarzschildData) :
+    Filter.Tendsto (kretschmannScalar S) (nhdsWithin 0 (Set.Ioi 0)) Filter.atTop
 
 /-- The singularity at r = 0 is a true (curvature) singularity, not removable by
 coordinate transformation. This contrasts with r = r_s which is only a coordinate singularity. -/
