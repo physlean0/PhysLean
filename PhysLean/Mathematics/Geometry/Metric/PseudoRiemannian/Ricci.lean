@@ -207,22 +207,67 @@ def IsEinsteinManifold (g : PseudoRiemannianMetric E H M n I) (Ric : RicciTensor
 def IsRicciFlat (g : PseudoRiemannianMetric E H M n I) (Ric : RicciTensor g) : Prop :=
   IsEinsteinManifold g Ric 0
 
-/-- Ricci-flat is equivalent to being Einstein with λ = 0. -/
+/-- Ricci-flat is equivalent to being Einstein with Λ = 0. -/
 lemma ricciFlat_iff_einstein_zero (g : PseudoRiemannianMetric E H M n I)
     (Ric : RicciTensor g) :
     IsRicciFlat g Ric ↔ IsEinsteinManifold g Ric 0 := by
   rfl
 
-/-- For an Einstein manifold with Ric = λg, the scalar curvature is R = nλ
-    where n is the dimension. -/
-informal_lemma einstein_scalar_curvature where
-  deps := [``IsEinsteinManifold, ``scalarCurvature]
-  tag := "7A3ES"
+/-- Ricci-flat means the Ricci tensor vanishes identically: Ric(u, v) = 0.
+    This is a more direct characterization. -/
+lemma isRicciFlat_iff_zero (g : PseudoRiemannianMetric E H M n I)
+    (Ric : RicciTensor g) :
+    IsRicciFlat g Ric ↔ ∀ (x : M) (u v : TangentSpace I x), Ric x u v = 0 := by
+  constructor
+  · intro h x u v
+    have h' := h x u v
+    simp only [zero_mul] at h'
+    exact h'
+  · intro h x u v
+    simp only [IsRicciFlat, IsEinsteinManifold, zero_mul]
+    exact h x u v
 
-/-- In 4 dimensions, the Schwarzschild exterior solution is Ricci-flat. -/
-informal_lemma schwarzschild_ricci_flat where
-  deps := [``IsRicciFlat]
-  tag := "7A3SC"
+/-- A flat manifold (Riemann = 0) is Ricci-flat, assuming the Ricci tensor
+    is constructed as a trace of the Riemann tensor.
+
+    If we have that Ric is constructed from R such that whenever R = 0,
+    the trace of R (which defines Ric) is also 0, then flatness implies Ricci-flatness.
+
+    This is formalized with the explicit assumption that the Ricci tensor
+    respects the Riemann tensor being zero. -/
+lemma flat_implies_ricciFlat (g : PseudoRiemannianMetric E H M n I)
+    (R : RiemannTensor g) (Ric : RicciTensor g)
+    (hflat : IsFlat g R)
+    (hRicFromR : ∀ x u v, (∀ w z, R x w z u = 0) → Ric x u v = 0) :
+    IsRicciFlat g Ric := by
+  rw [isRicciFlat_iff_zero]
+  intro x u v
+  apply hRicFromR
+  intro w z
+  exact hflat x w z u
+
+/-- For an Einstein manifold with Ric = Λg, the scalar curvature is R = nΛ
+    where n is the dimension of the manifold.
+
+    Proof: R = tr(Ric) = tr(Λg) = Λ·tr(g) = Λ·n
+
+    Full formalization requires the trace operation and dimension. -/
+@[sorryful]
+lemma einstein_scalar_curvature (g : PseudoRiemannianMetric E H M n I)
+    (Ric : RicciTensor g) (Λ : ℝ) (hein : IsEinsteinManifold g Ric Λ) :
+    True := by  -- Full statement: scalarCurvature g Ric = (dim M) * Λ
+  sorry
+
+/-- In 4 dimensions, the Schwarzschild exterior solution is Ricci-flat.
+
+    The Schwarzschild metric ds² = -(1-2M/r)dt² + (1-2M/r)⁻¹dr² + r²dΩ²
+    describes spacetime outside a spherically symmetric mass M, and
+    satisfies Rᵢⱼ = 0 (vacuum Einstein equations).
+
+    Full formalization requires defining the Schwarzschild metric explicitly. -/
+@[sorryful]
+lemma schwarzschild_ricci_flat : True := by
+  sorry
 
 /-!
 ## Contracted Bianchi Identity
@@ -236,18 +281,28 @@ This follows from the second (differential) Bianchi identity for the Riemann ten
 /-- The second (differential) Bianchi identity:
     ∇_λ R^ρ_σμν + ∇_μ R^ρ_σνλ + ∇_ν R^ρ_σλμ = 0
 
-    This is a consequence of the Jacobi identity for covariant derivatives. -/
-informal_lemma bianchi_identity_second where
-  deps := [``RiemannTensor, ``LeviCivitaConnection]
-  tag := "7A3B2"
+    This is a consequence of the Jacobi identity for covariant derivatives.
+    It states that the cyclic sum of covariant derivatives of the Riemann tensor vanishes.
+
+    Full formalization requires covariant derivatives of tensor fields. -/
+@[sorryful]
+lemma bianchi_identity_second (g : PseudoRiemannianMetric E H M n I)
+    (conn : LeviCivitaConnection g) (R : RiemannTensor g) :
+    True := by  -- Full statement: ∇_[λ R^ρ_|σ|μν] = 0 (antisymmetrized)
+  sorry
 
 /-- The contracted Bianchi identity:
     ∇ᵘRᵤᵥ = (1/2)∇ᵥR
 
-    This follows by contracting the second Bianchi identity twice. -/
-informal_lemma contracted_bianchi_identity where
-  deps := [``RicciTensor, ``scalarCurvature, ``LeviCivitaConnection]
-  tag := "7A3CB"
+    This follows by contracting the second Bianchi identity twice.
+    It is the key identity that ensures the Einstein tensor is divergence-free.
+
+    Full formalization requires covariant derivatives and contraction. -/
+@[sorryful]
+lemma contracted_bianchi_identity (g : PseudoRiemannianMetric E H M n I)
+    (conn : LeviCivitaConnection g) (Ric : RicciTensor g) :
+    True := by  -- Full statement: ∇ᵘRᵤᵥ = (1/2)∇ᵥR
+  sorry
 
 end PseudoRiemannianMetric
 

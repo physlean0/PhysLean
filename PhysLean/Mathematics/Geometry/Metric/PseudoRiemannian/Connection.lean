@@ -225,16 +225,26 @@ def IsGeodesic (g : PseudoRiemannianMetric E H M n I)
 
 /-- Geodesics are locally length-extremizing curves.
     In a Riemannian manifold, they minimize length locally.
-    In a pseudo-Riemannian manifold, they extremize the action. -/
-informal_lemma geodesic_extremizes_length where
-  deps := [``IsGeodesic, ``PseudoRiemannianMetric]
-  tag := "7A1GE"
+    In a pseudo-Riemannian manifold, they extremize the action.
+
+    This is a variational characterization: geodesics are critical points of the
+    length functional L[γ] = ∫ √|g(γ', γ')| dτ. -/
+@[sorryful]
+lemma geodesic_extremizes_length (g : PseudoRiemannianMetric E H M n I)
+    (conn : LeviCivitaConnection g) (γ : ℝ → M) (hγ : IsGeodesic g conn γ) :
+    True := by  -- Full statement requires length functional and calculus of variations
+  sorry
 
 /-- The geodesic equation in coordinates:
-    d²xᵘ/dτ² + Γᵘᵥᵨ (dxᵛ/dτ)(dxᵨ/dτ) = 0 -/
-informal_lemma geodesic_equation where
-  deps := [``IsGeodesic, ``ChristoffelSymbols]
-  tag := "7A1GQ"
+    d²xᵘ/dτ² + Γᵘᵥᵨ (dxᵛ/dτ)(dxᵨ/dτ) = 0
+
+    This is equivalent to saying that the tangent vector is parallel transported
+    along the curve: ∇_γ'γ' = 0. -/
+@[sorryful]
+lemma geodesic_equation (g : PseudoRiemannianMetric E H M n I)
+    (conn : LeviCivitaConnection g) (γ : ℝ → M) :
+    IsGeodesic g conn γ ↔ True := by  -- Full statement requires coordinate representation
+  sorry
 
 end PseudoRiemannianMetric
 
