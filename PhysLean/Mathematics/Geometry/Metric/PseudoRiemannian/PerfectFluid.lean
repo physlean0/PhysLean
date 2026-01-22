@@ -20,12 +20,17 @@ model stars, cosmological matter, and many other astrophysical systems.
 * `EquationOfState`: Relation between pressure and density p = p(ρ)
 * `FluidFourVelocity`: The 4-velocity field of the fluid
 
-## Main Results
+## Key Equations
 
-* `perfect_fluid_conservation`: ∇_μ T^μν = 0 gives fluid dynamics equations
-* `euler_equation`: The relativistic Euler equation for fluid flow
-* `continuity_equation`: Conservation of particle number/baryon number
-* `dust_stress_energy`: Pressureless matter (dust) as a special case
+Conservation equation: ∇_μ T^μν = 0 gives:
+- Relativistic Euler equation: (ρ + p) u^μ ∇_μ u^ν = -(g^μν + u^μ u^ν) ∂_μ p
+- Energy conservation: u^μ ∇_μ ρ + (ρ + p) ∇_μ u^μ = 0
+
+Equations of state:
+- Dust: p = 0 (non-relativistic matter)
+- Radiation: p = ρ/3 (ultra-relativistic matter)
+- Stiff matter: p = ρ (maximum causal pressure)
+- Dark energy: p = -ρ (cosmological constant)
 
 ## Physical Interpretation
 
@@ -36,12 +41,6 @@ A perfect fluid has:
 
 The stress-energy tensor in the fluid rest frame is:
   T^μ_ν = diag(-ρ, p, p, p)
-
-Common equations of state:
-- Dust: p = 0 (non-relativistic matter)
-- Radiation: p = ρ/3 (ultra-relativistic matter)
-- Stiff matter: p = ρ (maximum causal pressure)
-- Dark energy: p = -ρ (cosmological constant)
 
 ## References
 
@@ -73,8 +72,6 @@ In the fluid rest frame, u^μ = (1, 0, 0, 0). -/
 structure FluidFourVelocity where
   /-- The four components u^μ(x) at each spacetime point -/
   u : Fin 4 → ℝ → ℝ → ℝ → ℝ → ℝ
-  /-- Normalization: u^μ u_μ = -1 (timelike, future-pointing) -/
-  normalized : True  -- g_μν u^μ u^ν = -1
 
 /-- The Lorentz factor γ = u^0 = dt/dτ for the fluid. -/
 def FluidFourVelocity.lorentzFactor (u : FluidFourVelocity) (t x y z : ℝ) : ℝ :=
@@ -184,26 +181,6 @@ def causalEOS (fluid : PerfectFluid) : Prop :=
 
 /-! ## Conservation Laws -/
 
-/-- The conservation equation ∇_μ T^μν = 0 for a perfect fluid gives:
-1. The relativistic Euler equation (momentum conservation)
-2. The continuity equation (energy conservation) -/
-axiom perfect_fluid_conservation (fluid : PerfectFluid) :
-    True  -- ∇_μ T^μν = 0
-
-/-- The relativistic Euler equation:
-(ρ + p) u^μ ∇_μ u^ν = -(g^μν + u^μ u^ν) ∂_μ p
-
-This is the equation of motion for fluid elements. -/
-axiom euler_equation (fluid : PerfectFluid) :
-    True  -- (ρ+p) a^ν = -⊥^μν ∂_μ p where a^ν = u^μ ∇_μ u^ν
-
-/-- The energy conservation equation:
-u^μ ∇_μ ρ + (ρ + p) ∇_μ u^μ = 0
-
-This relates density changes to fluid expansion/compression. -/
-axiom energy_conservation (fluid : PerfectFluid) :
-    True  -- dρ/dτ + (ρ+p) θ = 0 where θ = ∇_μ u^μ
-
 /-- For dust (p = 0), the stress-energy simplifies to T_μν = ρ u_μ u_ν. -/
 lemma dust_stress_energy (fluid : PerfectFluid) (hDust : isDust fluid)
     (g : Fin 4 → Fin 4 → ℝ → ℝ → ℝ → ℝ → ℝ) :
@@ -216,22 +193,10 @@ lemma dust_stress_energy (fluid : PerfectFluid) (hDust : isDust fluid)
 
 /-! ## Thermodynamics -/
 
-/-- The first law of thermodynamics for a perfect fluid:
-d(ρV) = -p dV + T dS
-where V is volume, T is temperature, S is entropy. -/
-axiom first_law_thermodynamics (fluid : PerfectFluid) :
-    True  -- Energy change = work + heat
-
 /-- Adiabatic flow: no heat transfer, entropy is conserved along flow lines.
 u^μ ∂_μ s = 0 where s is entropy per baryon. -/
 def isAdiabaticFlow (_fluid : PerfectFluid) : Prop :=
   True  -- Entropy conserved along flow
-
-/-- For adiabatic flow, the first law gives:
-d(ρ/n) = -p d(1/n)
-where n is the baryon number density. -/
-axiom adiabatic_first_law (fluid : PerfectFluid) (_hAdiab : isAdiabaticFlow fluid) :
-    True  -- dε = -p d(1/n) where ε = ρ/n
 
 /-! ## Special Relativistic Limit -/
 
@@ -264,28 +229,10 @@ def observedEnergyDensity (fluid : PerfectFluid)
 def expansionScalar (_fluid : PerfectFluid) : ℝ → ℝ → ℝ → ℝ → ℝ :=
   fun _ _ _ _ => 0  -- Placeholder for ∇_μ u^μ
 
-/-- The shear tensor σ_μν measures distortion without volume change.
-For a perfect fluid, we don't track shear (it's viscosity-free). -/
-axiom shear_tensor_definition :
-    True  -- σ_μν = ∇_(μ u_ν) - (1/3) θ h_μν
-
-/-- The vorticity tensor ω_μν measures rotation of fluid elements.
-ω_μν = ∇_[μ u_ν] (antisymmetric part of velocity gradient). -/
-axiom vorticity_tensor_definition :
-    True  -- ω_μν = ∇_[μ u_ν]
-
 /-- Irrotational flow: vorticity vanishes, ω_μν = 0.
 In this case, u_μ = ∂_μ φ for some potential φ. -/
 def isIrrotationalFlow (_fluid : PerfectFluid) : Prop :=
   True  -- ω_μν = 0
-
-/-- The Raychaudhuri equation describes how expansion evolves:
-dθ/dτ = -θ²/3 - σ_μν σ^μν + ω_μν ω^μν - R_μν u^μ u^ν
-
-For a perfect fluid with Einstein equations:
-dθ/dτ = -θ²/3 - σ² + ω² - 4πG(ρ + 3p) -/
-axiom raychaudhuri_equation_fluid (fluid : PerfectFluid) :
-    True  -- The Raychaudhuri equation for fluid kinematics
 
 end PseudoRiemannianMetric
 end

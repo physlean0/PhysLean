@@ -22,25 +22,23 @@ to Einstein's equations due to its astrophysical relevance.
 
 ## Main Results
 
-* `kerr_is_vacuum`: The Kerr metric satisfies R_μν = 0
-* `kerr_is_stationary`: The metric has a timelike Killing vector ∂/∂t
-* `kerr_is_axisymmetric`: The metric has rotational symmetry ∂/∂φ
-* `kerr_no_hair`: Kerr is characterized uniquely by M and J
+* Horizon existence and properties
+* Surface gravity and thermodynamic quantities
+* Frame dragging effects
 
-## Physical Interpretation
+## Physical Properties
 
-The Kerr solution describes:
-- Rotating (astrophysical) black holes
-- Frame dragging effects near the black hole
-- The ergosphere where observers must co-rotate
+The Kerr solution:
+- Satisfies vacuum Einstein equations: R_μν = 0
+- Is stationary: ∂/∂t is a Killing vector
+- Is axisymmetric: ∂/∂φ is a Killing vector
+- Is NOT static for a ≠ 0: g_tφ ≠ 0 (frame dragging)
+- Is uniquely determined by M and J (no-hair theorem for vacuum)
 
 Key features:
 - Two horizons: outer (r₊) and inner (r₋)
 - Ring singularity at r = 0, θ = π/2
 - Ergosphere: region where ∂/∂t becomes spacelike
-
-In Boyer-Lindquist coordinates (t, r, θ, φ), the metric has off-diagonal terms
-g_tφ ≠ 0 representing frame dragging.
 
 ## References
 
@@ -258,29 +256,6 @@ lemma KerrData.surfaceGravity_extremal (K : KerrData) (hE : K.isExtremal) :
     ring
   simp [h]
 
-/-! ## Properties of Kerr Spacetime -/
-
-/-- The Kerr metric is a vacuum solution: R_μν = 0. -/
-axiom kerr_is_vacuum (K : KerrData) (coords : KerrBoyerLindquistCoords K) :
-    True  -- Ricci tensor vanishes
-
-/-- The Kerr metric is stationary: ∂/∂t is a Killing vector. -/
-axiom kerr_is_stationary (K : KerrData) :
-    True  -- ∂/∂t is a Killing vector field
-
-/-- The Kerr metric is axisymmetric: ∂/∂φ is a Killing vector. -/
-axiom kerr_is_axisymmetric (K : KerrData) :
-    True  -- ∂/∂φ is a Killing vector field
-
-/-- The Kerr metric is NOT static (except for a = 0): g_tφ ≠ 0 for a ≠ 0. -/
-axiom kerr_not_static (K : KerrData) (ha : K.spinParameter ≠ 0) :
-    True  -- Off-diagonal component g_tφ ≠ 0
-
-/-- The no-hair theorem: The Kerr solution is the unique stationary, axisymmetric,
-asymptotically flat vacuum solution (for uncharged black holes). -/
-axiom kerr_uniqueness :
-    True  -- Stationary + axisymmetric + vacuum + asymptotically flat → Kerr
-
 /-! ## Singularity Structure -/
 
 /-- The Kerr singularity is a ring at r = 0, θ = π/2 (where Σ = 0).
@@ -295,12 +270,6 @@ lemma ring_singularity_sigma_zero (K : KerrData) (ha : K.spinParameter ≠ 0) :
   simp [Real.cos_pi_div_two]
 
 /-! ## Penrose Process -/
-
-/-- The Penrose process: energy can be extracted from a Kerr black hole
-by sending particles into the ergosphere. The maximum extractable energy
-is the rotational energy: M - M_irr where M_irr = √(A/16π). -/
-axiom penrose_process_energy_extraction (K : KerrData) :
-    True  -- Energy can be extracted from ergosphere
 
 /-- The irreducible mass of a Kerr black hole:
 M_irr² = (r₊² + a²) / 4 = A / 16π
@@ -318,6 +287,10 @@ lemma KerrData.horizonArea_schwarzschild (K : KerrData) (hS : K.isSchwarzschild)
   unfold KerrData.horizonArea KerrData.isSchwarzschild at *
   rw [K.outer_horizon_schwarzschild hS, hS]
   ring
+
+/-- The extractable rotational energy is M - M_irr. -/
+def KerrData.extractableEnergy (K : KerrData) : ℝ :=
+  K.mass - K.irreducibleMass
 
 end PseudoRiemannianMetric
 end

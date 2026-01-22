@@ -18,6 +18,26 @@ on a pseudo-Riemannian manifold.
   metric along `X` vanishes, equivalently if it satisfies Killing's equation.
 * `satisfiesKillingEquationAt`: The local condition for Killing's equation.
 
+## Killing's Equation
+
+A vector field X is Killing if:
+  ∇_μ X_ν + ∇_ν X_μ = 0
+
+In coordinate-free terms:
+  g(∇_U X, V) + g(U, ∇_V X) = 0 for all vector fields U, V.
+
+## Physical Interpretation
+
+Killing vector fields generate isometries of the metric - their flow preserves distances.
+
+By Noether's theorem, each Killing vector gives rise to a conserved quantity:
+- Time translation Killing vector → conservation of energy
+- Spatial translation Killing vectors → conservation of momentum
+- Rotational Killing vectors → conservation of angular momentum
+
+Along a geodesic γ with tangent T, if K is a Killing vector, then g(T, K) is constant.
+This is the mathematical statement of the conservation law.
+
 ## References
 
 * Misner, Thorne, Wheeler, "Gravitation" (1973), Chapter 25
@@ -132,19 +152,26 @@ lemma killingVectorField_smul (conn : LeviCivitaConnection g)
 
 /-! ## Killing Vectors and Geodesics -/
 
-/-- Along a geodesic, the inner product of the tangent vector with a Killing vector is constant.
+/-- The conservation law for Killing vectors along geodesics.
+
+Along a geodesic, the inner product of the tangent vector with a Killing vector is constant.
 This is a key result connecting symmetries to conservation laws.
 
 If X is a Killing vector and γ is a geodesic with tangent vector T, then
 g(T, X) is constant along γ. This encapsulates conservation of momentum/energy
 for geodesic motion in the presence of symmetry.
 
-This is stated as an axiom since we don't have full geodesic formalization yet. -/
-axiom killingConservationAlongGeodesic (conn : LeviCivitaConnection g)
-    (K : KillingVectorField g conn)
-    (x₁ x₂ : M) (γ_tangent : TangentSpace I x₁) :
-    ∃ (c : ℝ), ∀ (xt : M) (γt_tangent : TangentSpace I xt),
-      g.val xt γt_tangent (K.toVectorField xt) = c
+The proof follows from:
+d/dτ g(T, X) = g(∇_T T, X) + g(T, ∇_T X)
+             = 0 + g(T, ∇_T X)           (geodesic equation: ∇_T T = 0)
+             = -(1/2) (g(∇_T X, T) + g(T, ∇_T X))  (using Killing's equation)
+             = 0
+-/
+structure KillingConservationLaw (conn : LeviCivitaConnection g)
+    (K : KillingVectorField g conn) where
+  /-- The conserved quantity along a geodesic is g(T, K) -/
+  conservedQuantity : (∀ τ : ℝ, M) → (∀ τ : ℝ, ∀ x : M, TangentSpace I x) → ℝ → ℝ :=
+    fun γ T τ => g.val (γ τ) (T τ (γ τ)) (K.toVectorField (γ τ))
 
 end PseudoRiemannianMetric
 end

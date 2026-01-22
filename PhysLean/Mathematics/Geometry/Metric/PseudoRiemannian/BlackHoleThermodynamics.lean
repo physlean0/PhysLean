@@ -15,19 +15,19 @@ connection between gravity, quantum mechanics, and thermodynamics.
 ## Main Definitions
 
 * `BlackHole`: A black hole with mass, charge, and angular momentum
-* `HorizonArea`: The area of the event horizon
-* `SurfaceGravity`: The surface gravity κ at the horizon
-* `HawkingTemperature`: The temperature T = ℏκ/(2πk_B)
-* `BekensteinHawkingEntropy`: The entropy S = A/(4ℓ_P²)
+* `horizonArea`: The area of the event horizon
+* `surfaceGravity`: The surface gravity κ at the horizon
+* `hawkingTemperature`: The temperature T = ℏκ/(2πk_B)
+* `bekensteinHawkingEntropy`: The entropy S = A/(4ℓ_P²)
 
-## Main Results (Laws of Black Hole Thermodynamics)
+## Laws of Black Hole Thermodynamics
 
-* `zeroth_law`: Surface gravity is constant over the horizon
-* `first_law`: δM = (κ/8π)δA + ΩδJ + ΦδQ
-* `second_law`: The horizon area never decreases (classically)
-* `third_law`: Cannot reduce surface gravity to zero in finite steps
+* Zeroth Law: Surface gravity is constant over the horizon
+* First Law: δM = (κ/8π)δA + ΩδJ + ΦδQ
+* Second Law: The horizon area never decreases (classically)
+* Third Law: Cannot reduce surface gravity to zero in finite steps
 
-## Physical Interpretation
+## Physical Background
 
 Black holes behave like thermodynamic systems:
 - Surface gravity κ ↔ Temperature T
@@ -47,29 +47,12 @@ and connects quantum mechanics (ℏ), gravity (G), and thermodynamics.
 
 noncomputable section
 
-open Bundle Set Finset Function Filter Module Topology ContinuousLinearMap
-open scoped Manifold Bundle LinearMap Dual
-
 namespace PseudoRiemannianMetric
-
-universe v w
-
-variable {E : Type v} {H : Type w} {M : Type w} {n : WithTop ℕ∞}
-variable [NormedAddCommGroup E] [NormedSpace ℝ E]
-variable [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M] [ChartedSpace H E]
-variable {I : ModelWithCorners ℝ E H}
-variable [IsManifold I (n + 1) M]
-variable [inst_tangent_findim : ∀ (x : M), FiniteDimensional ℝ (TangentSpace I x)]
 
 /-! ## Black Hole Parameters -/
 
 /-- A stationary black hole is characterized by mass M, angular momentum J, and charge Q.
-By the no-hair theorem, these are the only independent parameters.
-
-In geometric units (G = c = 1):
-- M has dimensions of length
-- J has dimensions of length²
-- Q has dimensions of length -/
+By the no-hair theorem, these are the only independent parameters. -/
 structure BlackHole where
   /-- The ADM mass of the black hole -/
   mass : ℝ
@@ -108,41 +91,51 @@ def schwarzschildHorizonRadius (bh : BlackHole) (_hS : bh.isSchwarzschild) : ℝ
   2 * bh.mass
 
 /-- The outer horizon radius for a Kerr-Newman black hole:
-r_+ = M + sqrt(M^2 - a^2 - Q^2)
-For Schwarzschild (a = Q = 0): r_+ = 2M -/
+r_+ = M + √(M² - a² - Q²) -/
 def outerHorizonRadius (bh : BlackHole) : ℝ :=
   let discriminant := bh.mass^2 - bh.spinParameter^2 - bh.charge^2
   bh.mass + Real.sqrt (max discriminant 0)
 
+/-- The outer horizon radius is positive. -/
+lemma outerHorizonRadius_pos (bh : BlackHole) : outerHorizonRadius bh > 0 := by
+  unfold outerHorizonRadius
+  have hm : bh.mass > 0 := bh.mass_pos
+  have hsqrt : Real.sqrt (max (bh.mass^2 - bh.spinParameter^2 - bh.charge^2) 0) ≥ 0 :=
+    Real.sqrt_nonneg _
+  linarith
+
 /-- The inner (Cauchy) horizon radius for a Kerr-Newman black hole:
-r_- = M - sqrt(M^2 - a^2 - Q^2)
-For Schwarzschild: r_- = 0 (degenerate) -/
+r_- = M - √(M² - a² - Q²) -/
 def innerHorizonRadius (bh : BlackHole) : ℝ :=
   let discriminant := bh.mass^2 - bh.spinParameter^2 - bh.charge^2
   bh.mass - Real.sqrt (max discriminant 0)
 
 /-- The area of the event horizon.
-For Schwarzschild: A = 16 pi M^2 = 4 pi r_+^2
-For Kerr: A = 8 pi M r_+ where r_+ = M + sqrt(M^2 - a^2)
-General Kerr-Newman: A = 4 pi (r_+^2 + a^2) -/
+For Schwarzschild: A = 16πM² = 4πr_+²
+For Kerr: A = 8πMr_+
+General Kerr-Newman: A = 4π(r_+² + a²) -/
 def horizonArea (bh : BlackHole) : ℝ :=
   let r_plus := outerHorizonRadius bh
   let a := bh.spinParameter
   4 * Real.pi * (r_plus^2 + a^2)
 
+/-- The horizon area is positive. -/
+lemma horizonArea_pos (bh : BlackHole) : horizonArea bh > 0 := by
+  unfold horizonArea
+  apply mul_pos
+  · apply mul_pos; norm_num; exact Real.pi_pos
+  · have hr : outerHorizonRadius bh > 0 := outerHorizonRadius_pos bh
+    have h1 : (outerHorizonRadius bh)^2 > 0 := sq_pos_of_pos hr
+    have h2 : bh.spinParameter^2 ≥ 0 := sq_nonneg _
+    linarith
+
 /-! ## Surface Gravity -/
 
-/-- The surface gravity kappa of a black hole, which measures the "strength" of gravity
-at the horizon (properly, the acceleration needed for a static observer at infinity
-to hold a test mass at the horizon).
-
-For Schwarzschild: kappa = 1/(4M)
-For Kerr: kappa = (r_+ - r_-)/(4Mr_+) = sqrt(M^2 - a^2)/(2Mr_+)
-For extremal black holes: kappa = 0 -/
-noncomputable def surfaceGravity (bh : BlackHole) : ℝ :=
-  -- General formula that reduces to special cases
-  -- For Kerr-Newman: kappa = sqrt(M^2 - a^2 - Q^2) / (2M r_+)
-  -- where r_+ = M + sqrt(M^2 - a^2 - Q^2)
+/-- The surface gravity κ of a black hole.
+For Schwarzschild: κ = 1/(4M)
+For Kerr: κ = √(M² - a²)/(2Mr_+)
+For extremal black holes: κ = 0 -/
+def surfaceGravity (bh : BlackHole) : ℝ :=
   let a := bh.spinParameter
   let Q := bh.charge
   let discriminant := bh.mass^2 - a^2 - Q^2
@@ -150,7 +143,7 @@ noncomputable def surfaceGravity (bh : BlackHole) : ℝ :=
     let r_plus := bh.mass + Real.sqrt discriminant
     Real.sqrt discriminant / (2 * bh.mass * r_plus)
   else
-    0  -- Extremal case
+    0
 
 /-- The surface gravity of a Schwarzschild black hole is 1/(4M). -/
 lemma surfaceGravity_schwarzschild (bh : BlackHole) (hS : bh.isSchwarzschild) :
@@ -158,61 +151,26 @@ lemma surfaceGravity_schwarzschild (bh : BlackHole) (hS : bh.isSchwarzschild) :
   unfold surfaceGravity BlackHole.spinParameter
   have hM_pos : bh.mass > 0 := bh.mass_pos
   have hM_sq_pos : bh.mass^2 > 0 := sq_pos_of_pos hM_pos
-  -- For Schwarzschild: J = 0 and Q = 0, so spinParameter = 0
   simp only [hS.1, hS.2, zero_div]
-  -- discriminant = M^2 - 0^2 - 0^2 = M^2 > 0, so we take the 'then' branch
   simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, sub_zero, hM_sq_pos,
     ↓reduceIte, Real.sqrt_sq (le_of_lt hM_pos)]
-  -- r_plus = M + M = 2M, so we get M / (2M * 2M) = 1/(4M)
   field_simp
   ring
 
-/-- An extremal black hole has zero surface gravity. -/
-axiom surfaceGravity_extremal (bh : BlackHole) (hE : bh.isExtremal) :
-    surfaceGravity bh = 0
-
-/-! ## Laws of Black Hole Mechanics -/
-
-/-- **Zeroth Law**: The surface gravity κ is constant over the event horizon
-of a stationary black hole.
-
-This is analogous to the zeroth law of thermodynamics: temperature is constant
-in thermal equilibrium. -/
-axiom zeroth_law (bh : BlackHole) :
-    True  -- κ is constant over the horizon
-
-/-- **First Law**: The differential mass formula for black holes.
-δM = (κ/8π)δA + Ω_H δJ + Φ_H δQ
-
-where:
-- κ is the surface gravity
-- A is the horizon area
-- Ω_H is the angular velocity of the horizon
-- J is angular momentum
-- Φ_H is the electric potential at the horizon
-- Q is electric charge
-
-This is analogous to dU = TdS + work terms in thermodynamics. -/
-axiom first_law (bh : BlackHole) :
-    True  -- δM = (κ/8π)δA + Ω_H δJ + Φ_H δQ
-
-/-- **Second Law (Area Theorem)**: The total area of event horizons cannot decrease
-in any classical process.
-
-δA ≥ 0
-
-This is Hawking's area theorem, proved using the focusing theorem and null energy condition.
-It is analogous to the second law: entropy never decreases. -/
-axiom second_law_area_theorem (bh : BlackHole) :
-    True  -- dA/dt ≥ 0 in classical GR
-
-/-- **Third Law**: It is impossible to reduce the surface gravity to zero
-by any finite sequence of operations.
-
-This is analogous to the third law of thermodynamics (can't reach absolute zero).
-It implies extremal black holes cannot be formed from non-extremal ones. -/
-axiom third_law (bh : BlackHole) :
-    True  -- Cannot achieve κ = 0 in finite steps
+/-- The surface gravity is non-negative. -/
+lemma surfaceGravity_nonneg (bh : BlackHole) : surfaceGravity bh ≥ 0 := by
+  simp only [surfaceGravity]
+  split_ifs with h
+  · apply div_nonneg
+    · exact Real.sqrt_nonneg _
+    · have hm : bh.mass > 0 := bh.mass_pos
+      have hsqrt : Real.sqrt (bh.mass ^ 2 - (bh.angularMomentum / bh.mass) ^ 2 - bh.charge ^ 2) ≥ 0 :=
+        Real.sqrt_nonneg _
+      have hr : bh.mass + Real.sqrt (bh.mass ^ 2 - (bh.angularMomentum / bh.mass) ^ 2 - bh.charge ^ 2) > 0 := by
+        linarith
+      have h2 : 2 * bh.mass > 0 := by linarith
+      exact le_of_lt (mul_pos h2 hr)
+  · norm_num
 
 /-! ## Hawking Temperature -/
 
@@ -221,11 +179,16 @@ T_H = ℏκ/(2πk_B)
 
 In natural units (ℏ = k_B = 1): T_H = κ/(2π)
 
-For Schwarzschild: T_H = 1/(8πM) ≈ 6×10⁻⁸ (M_☉/M) K
-
-Black holes are extremely cold for stellar masses but hot for small masses. -/
+For Schwarzschild: T_H = 1/(8πM) -/
 def hawkingTemperature (bh : BlackHole) : ℝ :=
   surfaceGravity bh / (2 * Real.pi)
+
+/-- The Hawking temperature is non-negative. -/
+lemma hawkingTemperature_nonneg (bh : BlackHole) : hawkingTemperature bh ≥ 0 := by
+  unfold hawkingTemperature
+  apply div_nonneg (surfaceGravity_nonneg bh)
+  have h1 : (2 : ℝ) > 0 := by norm_num
+  exact le_of_lt (mul_pos h1 Real.pi_pos)
 
 /-- The Hawking temperature of a Schwarzschild black hole. -/
 lemma hawkingTemperature_schwarzschild (bh : BlackHole) (hS : bh.isSchwarzschild) :
@@ -234,10 +197,6 @@ lemma hawkingTemperature_schwarzschild (bh : BlackHole) (hS : bh.isSchwarzschild
   rw [surfaceGravity_schwarzschild bh hS]
   ring
 
-/-- An extremal black hole has zero Hawking temperature. -/
-axiom hawkingTemperature_extremal (bh : BlackHole) (hE : bh.isExtremal) :
-    hawkingTemperature bh = 0
-
 /-! ## Bekenstein-Hawking Entropy -/
 
 /-- The Bekenstein-Hawking entropy:
@@ -245,103 +204,86 @@ S_BH = A/(4ℓ_P²) = A k_B c³/(4Gℏ)
 
 In natural units (G = ℏ = k_B = c = 1): S_BH = A/4
 
-This is an enormous entropy: for a solar-mass black hole, S ≈ 10⁷⁷ k_B.
-The entropy is proportional to AREA, not volume - the holographic principle! -/
+This is an enormous entropy: for a solar-mass black hole, S ≈ 10⁷⁷ k_B. -/
 def bekensteinHawkingEntropy (bh : BlackHole) : ℝ :=
   horizonArea bh / 4
 
-/-- The entropy of a Schwarzschild black hole is S = 4 pi M^2. -/
+/-- The entropy is positive. -/
+lemma bekensteinHawkingEntropy_pos (bh : BlackHole) : bekensteinHawkingEntropy bh > 0 := by
+  unfold bekensteinHawkingEntropy
+  apply div_pos (horizonArea_pos bh)
+  norm_num
+
+/-- The entropy of a Schwarzschild black hole is S = 4πM². -/
 lemma entropy_schwarzschild (bh : BlackHole) (hS : bh.isSchwarzschild) :
     bekensteinHawkingEntropy bh = 4 * Real.pi * bh.mass^2 := by
   unfold bekensteinHawkingEntropy horizonArea outerHorizonRadius BlackHole.spinParameter
   have hM_pos : bh.mass > 0 := bh.mass_pos
   have hM_sq_pos : bh.mass^2 > 0 := sq_pos_of_pos hM_pos
-  -- For Schwarzschild: J = 0 so spinParameter = 0, and Q = 0
   simp only [hS.1, hS.2, zero_div]
-  -- max (M^2 - 0^2 - 0^2) 0 = M^2
   have hmax : max (bh.mass^2) 0 = bh.mass^2 := max_eq_left (le_of_lt hM_sq_pos)
   simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, sub_zero, hmax,
     Real.sqrt_sq (le_of_lt hM_pos), add_zero]
-  -- Now we have 4 * π * ((M + M)^2 + 0) / 4 = 4 * π * M^2
   ring
-
-/-- The entropy satisfies the first law: dS = dM/T (for fixed J, Q). -/
-axiom entropy_first_law (bh : BlackHole) :
-    True  -- dS = δM/T_H when δJ = δQ = 0
-
-/-- The generalized second law: the total entropy (black hole + external matter)
-never decreases.
-
-S_total = S_BH + S_matter ≥ 0
-
-This accounts for Hawking radiation: as the black hole evaporates, its entropy
-decreases but the entropy of emitted radiation increases by more. -/
-axiom generalized_second_law :
-    True  -- d(S_BH + S_matter)/dt ≥ 0
 
 /-! ## Hawking Radiation -/
 
-/-- Black holes emit thermal radiation at the Hawking temperature.
-This is a quantum effect: particle pairs created near the horizon can
-separate, with one falling in and one escaping. -/
-axiom hawking_radiation (bh : BlackHole) :
-    True  -- Black hole emits blackbody radiation at T = T_H
+/-- The power (luminosity) of Hawking radiation scales as T⁴ (Stefan-Boltzmann):
+P ∝ A T⁴ ∝ 1/M²
 
-/-- The power (luminosity) of Hawking radiation scales as T^4 (Stefan-Boltzmann):
-P proportional to A T^4 proportional to 1/M^2
-
-For Schwarzschild: P = hbar c^6/(15360 pi G^2 M^2) -/
+For Schwarzschild: P = ℏc⁶/(15360πG²M²) -/
 def hawkingLuminosity (bh : BlackHole) : ℝ :=
-  -- Using Stefan-Boltzmann law with Hawking temperature
-  -- P = sigma A T^4 where sigma includes constants
-  -- For Schwarzschild: P = 1/(15360 pi M^2) in natural units
   1 / (15360 * Real.pi * bh.mass^2)
 
-/-- Black hole evaporation: the mass decreases due to Hawking radiation.
-dM/dt = -P < 0
+/-- The Hawking luminosity is positive. -/
+lemma hawkingLuminosity_pos (bh : BlackHole) : hawkingLuminosity bh > 0 := by
+  unfold hawkingLuminosity
+  apply one_div_pos.mpr
+  apply mul_pos
+  · apply mul_pos; norm_num; exact Real.pi_pos
+  · exact sq_pos_of_pos bh.mass_pos
 
-The evaporation time for a Schwarzschild black hole is:
-τ = 5120πG²M³/(ℏc⁴) ≈ 2×10⁶⁷ (M/M_☉)³ years -/
-axiom black_hole_evaporation (bh : BlackHole) :
-    True  -- dM/dt = -L_H < 0
-
-/-- The evaporation time of a Schwarzschild black hole scales as M^3. -/
+/-- The evaporation time of a Schwarzschild black hole scales as M³. -/
 def evaporationTime (bh : BlackHole) (_hS : bh.isSchwarzschild) : ℝ :=
-  5120 * Real.pi * bh.mass^3  -- In natural units
+  5120 * Real.pi * bh.mass^3
 
-/-! ## Information Paradox -/
+/-- The evaporation time is positive. -/
+lemma evaporationTime_pos (bh : BlackHole) (hS : bh.isSchwarzschild) :
+    evaporationTime bh hS > 0 := by
+  unfold evaporationTime
+  apply mul_pos
+  · apply mul_pos; norm_num; exact Real.pi_pos
+  · exact pow_pos bh.mass_pos 3
 
-/-- The black hole information paradox: Hawking radiation appears to be thermal
-(maximum entropy for given energy), suggesting information is lost when matter
-falls into a black hole and the black hole evaporates.
-
-This contradicts unitarity of quantum mechanics. The resolution likely involves
-subtle correlations in the Hawking radiation or modifications at the Planck scale. -/
-axiom information_paradox :
-    True  -- Tension between thermal Hawking radiation and unitarity
-
-/-- The Page time: the time at which half the initial entropy has been radiated.
-After the Page time, the von Neumann entropy of the radiation should start decreasing
-if information is preserved. -/
+/-- The Page time: the time at which half the initial entropy has been radiated. -/
 def pageTime (bh : BlackHole) (hS : bh.isSchwarzschild) : ℝ :=
-  evaporationTime bh hS / 2  -- Roughly half the evaporation time
+  evaporationTime bh hS / 2
 
-/-! ## Thermodynamic Analogies -/
+/-- The Page time is positive. -/
+lemma pageTime_pos (bh : BlackHole) (hS : bh.isSchwarzschild) : pageTime bh hS > 0 := by
+  unfold pageTime
+  apply div_pos (evaporationTime_pos bh hS)
+  norm_num
 
-/-- Summary of the black hole thermodynamics analogy:
+/-! ## Thermodynamic Relations -/
 
-| Black Hole      | Thermodynamics |
-|-----------------|----------------|
-| Mass M          | Energy E       |
-| Surface gravity κ | Temperature T  |
-| Area A          | Entropy S      |
-| Zeroth Law      | Zeroth Law     |
-| First Law       | First Law      |
-| Area Theorem    | Second Law     |
-| Third Law       | Third Law      |
--/
-axiom thermodynamic_analogy :
-    True  -- The analogy is exact, not just formal
+/-- The first law relates changes in mass to changes in area, angular momentum, and charge:
+δM = (κ/8π)δA + Ω_H δJ + Φ_H δQ
+
+This structure captures the coefficients in the first law. -/
+structure FirstLawCoefficients (bh : BlackHole) where
+  /-- κ/(8π) coefficient for area change -/
+  areaCoeff : ℝ := surfaceGravity bh / (8 * Real.pi)
+  /-- Horizon angular velocity Ω_H -/
+  angularVelocity : ℝ
+  /-- Electric potential at horizon Φ_H -/
+  electricPotential : ℝ
+
+/-- For Schwarzschild, the area coefficient is 1/(32πM). -/
+lemma firstLaw_areaCoeff_schwarzschild (bh : BlackHole) (hS : bh.isSchwarzschild) :
+    surfaceGravity bh / (8 * Real.pi) = 1 / (32 * Real.pi * bh.mass) := by
+  rw [surfaceGravity_schwarzschild bh hS]
+  ring
 
 end PseudoRiemannianMetric
 end

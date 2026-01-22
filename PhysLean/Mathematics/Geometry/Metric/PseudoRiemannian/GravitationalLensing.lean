@@ -11,24 +11,16 @@ import Mathlib.Analysis.SpecialFunctions.Log.Basic
 # Gravitational Lensing
 
 This file formalizes gravitational lensing effects in general relativity,
-where light rays are bent by gravitational fields. This includes the classic
-tests of GR: light deflection, Shapiro time delay, and gravitational redshift.
+where light rays are bent by gravitational fields.
 
 ## Main Definitions
 
-* `DeflectionAngle`: The angle by which light is bent by a mass
-* `EinsteinRadius`: The characteristic angular scale for lensing
-* `ShapiroDelay`: The time delay of signals passing near a massive object
+* `deflectionAngleSchwarzschild`: The angle by which light is bent by a mass
+* `einsteinRadius`: The characteristic angular scale for lensing
+* `shapiroDelay`: The time delay of signals passing near a massive object
 * `LensingGeometry`: The lens-source-observer configuration
 
-## Main Results
-
-* `deflection_angle_schwarzschild`: Δφ = 4GM/(c²b) for impact parameter b
-* `shapiro_delay_formula`: The Shapiro time delay formula
-* `einstein_ring_condition`: When a perfect Einstein ring forms
-* `magnification_formula`: Brightness amplification by lensing
-
-## Physical Interpretation
+## Physical Background
 
 Gravitational lensing is caused by:
 - Curved spacetime near massive objects
@@ -50,19 +42,7 @@ Key phenomena:
 
 noncomputable section
 
-open Bundle Set Finset Function Filter Module Topology ContinuousLinearMap
-open scoped Manifold Bundle LinearMap Dual
-
 namespace PseudoRiemannianMetric
-
-universe v w
-
-variable {E : Type v} {H : Type w} {M : Type w} {n : WithTop ℕ∞}
-variable [NormedAddCommGroup E] [NormedSpace ℝ E]
-variable [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M] [ChartedSpace H E]
-variable {I : ModelWithCorners ℝ E H}
-variable [IsManifold I (n + 1) M]
-variable [inst_tangent_findim : ∀ (x : M), FiniteDimensional ℝ (TangentSpace I x)]
 
 /-! ## Light Deflection -/
 
@@ -73,10 +53,11 @@ This is twice the Newtonian prediction, famously confirmed in 1919. -/
 def deflectionAngleSchwarzschild (mass : ℝ) (impactParameter : ℝ) : ℝ :=
   4 * mass / impactParameter
 
-/-- The deflection angle for light grazing the Sun is approximately 1.75 arcseconds.
-This was the prediction tested by Eddington in 1919. -/
-axiom deflection_solar_limb :
-    True  -- Δφ ≈ 1.75" for b = R_☉
+/-- The deflection angle is positive for positive mass and impact parameter. -/
+lemma lightDeflection_pos (mass b : ℝ) (hm : mass > 0) (hb : b > 0) :
+    deflectionAngleSchwarzschild mass b > 0 := by
+  unfold deflectionAngleSchwarzschild
+  positivity
 
 /-- Light deflection in the weak-field limit: the angle is proportional to M/b. -/
 lemma deflection_angle_proportional (mass b : ℝ) (_hb : b > 0) (c : ℝ) (hc : c > 0) :
@@ -86,10 +67,14 @@ lemma deflection_angle_proportional (mass b : ℝ) (_hb : b > 0) (c : ℝ) (hc :
   have hc_ne : c ≠ 0 := ne_of_gt hc
   field_simp
 
-/-- For a general mass distribution, deflection is the integral of the gradient
-of the gravitational potential along the light path. -/
-axiom deflection_angle_integral :
-    True  -- Δφ = (2/c²) ∫ ∇⊥ Φ dl
+/-- Deflection scales inversely with impact parameter. -/
+lemma deflection_scaling (mass b₁ b₂ : ℝ) (hb₁ : b₁ > 0) (hb₂ : b₂ > 0) :
+    deflectionAngleSchwarzschild mass b₁ * b₁ =
+    deflectionAngleSchwarzschild mass b₂ * b₂ := by
+  unfold deflectionAngleSchwarzschild
+  have hb₁_ne : b₁ ≠ 0 := ne_of_gt hb₁
+  have hb₂_ne : b₂ ≠ 0 := ne_of_gt hb₂
+  field_simp
 
 /-! ## Lensing Geometry -/
 
@@ -102,24 +87,40 @@ structure LensingGeometry where
   /-- Distance from lens to source -/
   D_LS : ℝ
   /-- Mass of the lens -/
-  lenssMass : ℝ
+  lensMass : ℝ
   /-- Angular position of the source (unlensed) -/
   β : ℝ
   /-- All distances are positive -/
   D_L_pos : D_L > 0
   D_S_pos : D_S > 0
   D_LS_pos : D_LS > 0
-  /-- Distances satisfy D_S ≥ D_L + D_LS (approximately, for cosmological distances) -/
-  distance_relation : True
+  /-- Mass is positive -/
+  mass_pos : lensMass > 0
 
 /-- The Einstein radius: the characteristic angular scale for strong lensing.
 θ_E = √(4GM D_LS / (c² D_L D_S)) -/
 def einsteinRadius (geom : LensingGeometry) : ℝ :=
-  Real.sqrt (4 * geom.lenssMass * geom.D_LS / (geom.D_L * geom.D_S))
+  Real.sqrt (4 * geom.lensMass * geom.D_LS / (geom.D_L * geom.D_S))
+
+/-- The Einstein radius is positive. -/
+lemma einsteinRadius_pos (geom : LensingGeometry) : einsteinRadius geom > 0 := by
+  unfold einsteinRadius
+  apply Real.sqrt_pos_of_pos
+  apply div_pos
+  · apply mul_pos
+    · apply mul_pos; norm_num; exact geom.mass_pos
+    · exact geom.D_LS_pos
+  · exact mul_pos geom.D_L_pos geom.D_S_pos
 
 /-- The Einstein radius in physical units at the lens plane. -/
 def einsteinRadiusPhysical (geom : LensingGeometry) : ℝ :=
   einsteinRadius geom * geom.D_L
+
+/-- The physical Einstein radius is positive. -/
+lemma einsteinRadiusPhysical_pos (geom : LensingGeometry) :
+    einsteinRadiusPhysical geom > 0 := by
+  unfold einsteinRadiusPhysical
+  exact mul_pos (einsteinRadius_pos geom) geom.D_L_pos
 
 /-! ## Lens Equation -/
 
@@ -132,14 +133,6 @@ def lensEquationPointMass (geom : LensingGeometry) (θ : ℝ) : ℝ :=
   let θ_E := einsteinRadius geom
   θ - θ_E^2 / θ
 
-/-- The lens equation can have multiple solutions (multiple images). -/
-axiom lens_equation_multiple_images (geom : LensingGeometry) :
-    True  -- Can have 2 or more images
-
-/-- For a point mass, there are always exactly 2 images (one on each side of lens). -/
-axiom point_mass_two_images (geom : LensingGeometry) :
-    True  -- Exactly 2 images for point mass
-
 /-- Image positions for a point mass lens:
 θ_± = (β ± √(β² + 4θ_E²)) / 2 -/
 def imagePositions (geom : LensingGeometry) : ℝ × ℝ :=
@@ -148,6 +141,13 @@ def imagePositions (geom : LensingGeometry) : ℝ × ℝ :=
   ((geom.β + Real.sqrt discriminant) / 2,
    (geom.β - Real.sqrt discriminant) / 2)
 
+/-- The discriminant for image positions is always positive. -/
+lemma imagePositions_discriminant_pos (geom : LensingGeometry) :
+    geom.β^2 + 4 * (einsteinRadius geom)^2 > 0 := by
+  have h1 : geom.β^2 ≥ 0 := sq_nonneg _
+  have h2 : (einsteinRadius geom)^2 > 0 := sq_pos_of_pos (einsteinRadius_pos geom)
+  linarith
+
 /-! ## Einstein Ring -/
 
 /-- An Einstein ring forms when source, lens, and observer are perfectly aligned (β = 0).
@@ -155,78 +155,76 @@ The ring has angular radius θ_E. -/
 def isEinsteinRing (geom : LensingGeometry) : Prop :=
   geom.β = 0
 
-/-- When β = 0, the two image positions coincide at ±θ_E, forming a ring. -/
-axiom einstein_ring_radius (geom : LensingGeometry) (hRing : isEinsteinRing geom) :
-    let θ_E := einsteinRadius geom
-    imagePositions geom = (θ_E, -θ_E)
+/-- For an Einstein ring, both image positions have magnitude θ_E. -/
+lemma einstein_ring_positions (geom : LensingGeometry) (hRing : isEinsteinRing geom) :
+    let (θ_plus, θ_minus) := imagePositions geom
+    θ_plus = einsteinRadius geom ∧ θ_minus = -(einsteinRadius geom) := by
+  unfold imagePositions isEinsteinRing at *
+  simp only [hRing, zero_pow, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_add]
+  have h1 : Real.sqrt (4 * (einsteinRadius geom)^2) = 2 * einsteinRadius geom := by
+    rw [Real.sqrt_eq_iff_eq_sq]
+    · ring
+    · apply mul_nonneg; norm_num; exact sq_nonneg _
+    · linarith [einsteinRadius_pos geom]
+  simp only [h1]
+  constructor
+  · ring
+  · ring
 
 /-! ## Magnification -/
 
-/-- The magnification of an image is the ratio of observed to unlensed solid angle.
-μ = 1 / |det(∂β/∂θ)| = θ/(θ² - θ_E²) × d(θ²-θ_E²)/dθ -/
+/-- The magnification of an image for a point mass lens.
+μ = |θ/(θ² - θ_E²)| × |d(θ² - θ_E²)/dθ| -/
 def magnificationPointMass (geom : LensingGeometry) (θ : ℝ) : ℝ :=
   let θ_E := einsteinRadius geom
   let u := θ^2 - θ_E^2
-  if u ≠ 0 then θ^2 / |u| else 0  -- Undefined on Einstein ring
+  if u ≠ 0 then θ^2 / |u| else 0
 
-/-- The total magnification is the sum of magnifications of all images. -/
-def totalMagnification (geom : LensingGeometry) : ℝ :=
-  let (θ_plus, θ_minus) := imagePositions geom
-  |magnificationPointMass geom θ_plus| + |magnificationPointMass geom θ_minus|
-
-/-- For a point mass, the total magnification is:
+/-- The total magnification formula for a point mass:
 μ_total = (u² + 2) / (u √(u² + 4)) where u = β/θ_E -/
 def totalMagnificationFormula (geom : LensingGeometry) : ℝ :=
   let θ_E := einsteinRadius geom
   let u := geom.β / θ_E
   (u^2 + 2) / (u * Real.sqrt (u^2 + 4))
 
-/-- Magnification diverges at the Einstein ring (caustic). -/
-axiom magnification_diverges_at_caustic (geom : LensingGeometry) :
-    True  -- μ → ∞ as β → 0
-
 /-! ## Shapiro Time Delay -/
 
 /-- The Shapiro time delay: light signals are delayed when passing near massive objects.
-This is a fourth test of GR (after perihelion precession, light deflection, redshift).
 
-Δt = (4GM/c³) ln((r₁ + x₁)(r₂ + x₂) / b²)
-where r₁, r₂ are distances to endpoints, x₁, x₂ are projections along the line of sight. -/
+Δt = (4GM/c³) ln((r₁ + x₁)(r₂ + x₂) / b²) -/
 def shapiroDelay (mass r₁ r₂ b : ℝ) : ℝ :=
-  4 * mass * Real.log ((r₁ + r₂)^2 / b^2)  -- Simplified formula
+  4 * mass * Real.log ((r₁ + r₂)^2 / b^2)
 
-/-- For a radar signal to a planet, the delay is approximately:
-Δt ≈ (4GM/c³) ln(4r₁r₂/b²) -/
+/-- For a radar signal to a planet, the delay formula. -/
 def shapiroDelayRadar (mass r_earth r_planet b : ℝ) : ℝ :=
   4 * mass * Real.log (4 * r_earth * r_planet / b^2)
 
-/-- The Shapiro delay was first measured using radar signals to Mercury and Venus. -/
-axiom shapiro_delay_measured :
-    True  -- Δt ≈ 200 μs for superior conjunction
-
-/-- The time delay between images in a gravitational lens system.
-Different images have different path lengths and different Shapiro delays. -/
-axiom time_delay_between_images (geom : LensingGeometry) :
-    True  -- Δt = (D_L D_S / D_LS) × (geometric + potential terms)
+/-- The Shapiro delay is positive when the argument of log is > 1. -/
+lemma shapiroDelay_pos (mass r₁ r₂ b : ℝ) (hm : mass > 0)
+    (h : (r₁ + r₂)^2 / b^2 > 1) :
+    shapiroDelay mass r₁ r₂ b > 0 := by
+  unfold shapiroDelay
+  apply mul_pos
+  · linarith
+  · exact Real.log_pos h
 
 /-! ## Gravitational Redshift -/
 
 /-- Gravitational redshift: photons lose energy climbing out of a gravitational well.
-z = Δλ/λ = Δν/ν = GM/(c²r) for weak fields. -/
+z = Δλ/λ = Δν/ν ≈ GM/(c²r) for weak fields. -/
 def gravitationalRedshiftWeak (mass r : ℝ) : ℝ :=
   mass / r
+
+/-- The weak-field redshift is positive. -/
+lemma gravitationalRedshiftWeak_pos (mass r : ℝ) (hm : mass > 0) (hr : r > 0) :
+    gravitationalRedshiftWeak mass r > 0 := by
+  unfold gravitationalRedshiftWeak
+  exact div_pos hm hr
 
 /-- For Schwarzschild, the exact redshift factor is:
 1 + z = 1/√(1 - r_s/r) -/
 def gravitationalRedshiftSchwarzschild (mass r : ℝ) : ℝ :=
   1 / Real.sqrt (1 - 2 * mass / r) - 1
-
-/-- Gravitational redshift has been measured:
-- Pound-Rebka experiment (1959): redshift in Earth's gravity
-- GPS satellites: must correct for gravitational time dilation
-- White dwarf spectra: large redshifts observed -/
-axiom gravitational_redshift_measured :
-    True  -- Multiple experimental confirmations
 
 /-! ## Microlensing -/
 
@@ -245,61 +243,47 @@ structure MicrolensingEvent where
   t_E : ℝ
   /-- Mass is positive -/
   mass_pos : lensMass > 0
+  /-- Crossing time is positive -/
+  t_E_pos : t_E > 0
+
+/-- The impact parameter as a function of time during a microlensing event.
+u(t) = √(u₀² + ((t-t₀)/t_E)²) -/
+def microlensingImpactParameter (event : MicrolensingEvent) (t : ℝ) : ℝ :=
+  Real.sqrt (event.u₀^2 + ((t - event.t₀) / event.t_E)^2)
 
 /-- The magnification as a function of time during a microlensing event.
-u(t) = √(u₀² + ((t-t₀)/t_E)²)
 μ(t) = (u² + 2) / (u√(u² + 4)) -/
 def microlensingMagnification (event : MicrolensingEvent) (t : ℝ) : ℝ :=
-  let u := Real.sqrt (event.u₀^2 + ((t - event.t₀) / event.t_E)^2)
+  let u := microlensingImpactParameter event t
   (u^2 + 2) / (u * Real.sqrt (u^2 + 4))
 
 /-- The characteristic microlensing light curve is symmetric about t₀. -/
 lemma microlensing_symmetric (event : MicrolensingEvent) (t : ℝ) :
     microlensingMagnification event (event.t₀ + t) =
     microlensingMagnification event (event.t₀ - t) := by
-  unfold microlensingMagnification
+  unfold microlensingMagnification microlensingImpactParameter
   have h1 : event.t₀ + t - event.t₀ = t := by ring
   have h2 : event.t₀ - t - event.t₀ = -t := by ring
   simp only [h1, h2]
   have h3 : (t / event.t_E)^2 = (-t / event.t_E)^2 := by ring
   rw [h3]
 
-/-! ## Strong Lensing -/
+/-! ## Strong and Weak Lensing -/
 
 /-- Strong lensing produces multiple resolved images, arcs, or Einstein rings.
 This occurs when the source is within about 2θ_E of the optical axis. -/
 def isStrongLensing (geom : LensingGeometry) : Prop :=
   |geom.β| < 2 * einsteinRadius geom
 
-/-- Giant arcs form when extended sources are strongly lensed.
-The tangential magnification stretches the image into an arc. -/
-axiom giant_arc_formation :
-    True  -- Extended source + high magnification = arc
-
-/-- The critical curve is where magnification formally diverges.
-For axisymmetric lenses, this is the Einstein ring. -/
-def criticalCurve (geom : LensingGeometry) : ℝ := einsteinRadius geom
-
-/-- The caustic is the mapping of the critical curve to the source plane.
-For a point mass, the caustic is a single point at the origin. -/
-def causticPointMass : ℝ := 0
-
-/-! ## Weak Lensing -/
-
-/-- Weak lensing produces small distortions (shear) of background galaxies.
-This is used to map dark matter distributions. -/
+/-- Weak lensing produces small distortions (shear) of background galaxies. -/
 def isWeakLensing (geom : LensingGeometry) : Prop :=
   |geom.β| > 2 * einsteinRadius geom
 
-/-- The shear γ describes the elliptical distortion of images.
-For weak lensing: γ ≈ κ (shear ≈ convergence) -/
-axiom weak_lensing_shear :
-    True  -- γ measures image distortion
+/-- The critical curve for axisymmetric lenses is at the Einstein radius. -/
+def criticalCurve (geom : LensingGeometry) : ℝ := einsteinRadius geom
 
-/-- The convergence κ is the surface mass density in units of the critical density.
-κ = Σ/Σ_crit where Σ_crit = c² D_S / (4πG D_L D_LS) -/
-axiom convergence_definition :
-    True  -- κ = Σ/Σ_crit
+/-- The caustic for a point mass is a single point at the origin. -/
+def causticPointMass : ℝ := 0
 
 end PseudoRiemannianMetric
 end

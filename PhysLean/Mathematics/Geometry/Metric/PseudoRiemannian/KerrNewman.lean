@@ -23,13 +23,20 @@ and electric charge Q.
 
 ## Main Results
 
-* `kn_is_electrovacuum`: Satisfies Einstein-Maxwell equations
-* `kn_uniqueness`: The unique stationary axisymmetric electrovacuum black hole
-* `kn_limits`: Reduces to Kerr (Q=0), RN (a=0), Schwarzschild (a=Q=0)
+* Horizon existence and properties
+* Thermodynamic quantities (temperature, entropy)
+* Special case limits (Kerr, RN, Schwarzschild)
 
-## Physical Interpretation
+## Physical Properties
 
-The Kerr-Newman solution completes the classification of stationary black holes:
+The Kerr-Newman solution satisfies:
+- Einstein-Maxwell equations: G_μν = 8π T_μν^EM (electrovacuum)
+- Stationarity: ∂/∂t is a Killing vector
+- Axisymmetry: ∂/∂φ is a Killing vector
+- No-hair theorem uniqueness: the unique stationary axisymmetric
+  electrovacuum black hole solution
+
+The solution completes the classification of stationary black holes:
 
 | Solution           | M | J | Q |
 |-------------------|---|---|---|
@@ -37,9 +44,6 @@ The Kerr-Newman solution completes the classification of stationary black holes:
 | Kerr              | ✓ | ✓ | 0 |
 | Reissner-Nordström| ✓ | 0 | ✓ |
 | Kerr-Newman       | ✓ | ✓ | ✓ |
-
-By the no-hair theorem, these are the ONLY stationary black hole solutions
-in Einstein-Maxwell theory.
 
 ## References
 
@@ -272,9 +276,14 @@ def KerrNewmanData.horizonElectricPotential (KN : KerrNewmanData) : ℝ :=
   KN.charge * KN.outerHorizon / (KN.outerHorizon^2 + KN.spinParameter^2)
 
 /-- The first law of black hole thermodynamics for Kerr-Newman:
-dM = T dS + Ω_H dJ + Φ_H dQ -/
-axiom kn_first_law (KN : KerrNewmanData) :
-    True  -- dM = (κ/8π)dA + Ω_H dJ + Φ_H dQ
+dM = T dS + Ω_H dJ + Φ_H dQ = (κ/8π)dA + Ω_H dJ + Φ_H dQ -/
+structure KNFirstLaw (KN : KerrNewmanData) where
+  /-- Temperature coefficient -/
+  temperatureCoeff : ℝ := KN.surfaceGravity / (8 * Real.pi)
+  /-- Angular velocity coefficient -/
+  angularVelocityCoeff : ℝ := KN.horizonAngularVelocity
+  /-- Electric potential coefficient -/
+  electricPotentialCoeff : ℝ := KN.horizonElectricPotential
 
 /-- An extremal Kerr-Newman black hole has zero temperature. -/
 lemma KerrNewmanData.extremal_zero_temperature (KN : KerrNewmanData)
@@ -286,51 +295,47 @@ lemma KerrNewmanData.extremal_zero_temperature (KN : KerrNewmanData)
 
 /-! ## Properties -/
 
-/-- Kerr-Newman is an electrovacuum solution: G_μν = 8π T_μν^EM. -/
-axiom kn_is_electrovacuum (KN : KerrNewmanData) :
-    True  -- Einstein-Maxwell equations satisfied
-
-/-- Kerr-Newman is stationary: ∂/∂t is a Killing vector. -/
-axiom kn_is_stationary (KN : KerrNewmanData) :
-    True  -- ∂/∂t is Killing
-
-/-- Kerr-Newman is axisymmetric: ∂/∂φ is a Killing vector. -/
-axiom kn_is_axisymmetric (KN : KerrNewmanData) :
-    True  -- ∂/∂φ is Killing
-
-/-- The no-hair theorem: Kerr-Newman is the unique stationary, axisymmetric,
-asymptotically flat electrovacuum black hole solution. -/
-axiom kn_uniqueness :
-    True  -- Stationary + axisymmetric + electrovacuum + asymp. flat → KN
-
 /-- The Kerr-Newman singularity is a ring at r = 0, θ = π/2 (where Σ = 0). -/
 def knIsRingSingularity (KN : KerrNewmanData) (r θ : ℝ) : Prop :=
   r = 0 ∧ θ = Real.pi / 2 ∧ KN.spinParameter ≠ 0
 
 /-! ## Limiting Cases -/
 
-/-- Setting Q = 0 gives the Kerr solution. -/
-axiom kn_kerr_limit (KN : KerrNewmanData) (hK : KN.isKerr) :
-    True  -- Metric reduces to Kerr
+/-- For Kerr (Q = 0), the outer horizon simplifies to the Kerr formula. -/
+lemma KerrNewmanData.kerr_limit_horizon (KN : KerrNewmanData) (hK : KN.isKerr) :
+    KN.discriminant = KN.mass^2 - KN.spinParameter^2 := by
+  unfold KerrNewmanData.discriminant KerrNewmanData.isKerr at *
+  simp [hK]
 
-/-- Setting a = 0 gives the Reissner-Nordström solution. -/
-axiom kn_rn_limit (KN : KerrNewmanData) (hRN : KN.isReissnerNordstrom) :
-    True  -- Metric reduces to Reissner-Nordström
-
-/-- Setting a = Q = 0 gives the Schwarzschild solution. -/
-axiom kn_schwarzschild_limit (KN : KerrNewmanData) (hS : KN.isSchwarzschild) :
-    True  -- Metric reduces to Schwarzschild
+/-- For Schwarzschild (a = Q = 0), the outer horizon is 2M. -/
+lemma KerrNewmanData.schwarzschild_limit_horizon (KN : KerrNewmanData)
+    (hS : KN.isSchwarzschild) : KN.outerHorizon = 2 * KN.mass := by
+  unfold KerrNewmanData.outerHorizon KerrNewmanData.isSchwarzschild
+    KerrNewmanData.discriminant at *
+  simp only [hS.1, hS.2, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, sub_zero]
+  have hM_pos : KN.mass > 0 := KN.mass_pos
+  have hmax : max (KN.mass^2) 0 = KN.mass^2 := max_eq_left (sq_nonneg _)
+  simp only [hmax, Real.sqrt_sq (le_of_lt hM_pos)]
+  ring
 
 /-! ## Superradiance -/
 
-/-- Superradiant scattering: waves with ω < mΩ_H + qΦ_H are amplified
-when scattered off a Kerr-Newman black hole. -/
-axiom kn_superradiance (KN : KerrNewmanData) :
-    True  -- Superradiant amplification condition
+/-- Superradiant scattering condition: waves with ω < mΩ_H + qΦ_H are amplified
+when scattered off a Kerr-Newman black hole.
+Returns true if the condition for superradiance is satisfied. -/
+def knSuperradianceCondition (KN : KerrNewmanData) (ω m q : ℝ) : Prop :=
+  ω < m * KN.horizonAngularVelocity + q * KN.horizonElectricPotential
 
-/-- The Penrose process extracts energy from the ergosphere. -/
-axiom kn_penrose_process (KN : KerrNewmanData) :
-    True  -- Energy extraction from ergosphere
+/-- The superradiance amplification factor. -/
+def knSuperradianceAmplification (KN : KerrNewmanData) (ω m q : ℝ) : ℝ :=
+  m * KN.horizonAngularVelocity + q * KN.horizonElectricPotential - ω
+
+/-- Amplification is positive when superradiance condition holds. -/
+lemma knSuperradiance_amplification_pos (KN : KerrNewmanData) (ω m q : ℝ)
+    (h : knSuperradianceCondition KN ω m q) :
+    knSuperradianceAmplification KN ω m q > 0 := by
+  unfold knSuperradianceAmplification knSuperradianceCondition at *
+  linarith
 
 end PseudoRiemannianMetric
 end

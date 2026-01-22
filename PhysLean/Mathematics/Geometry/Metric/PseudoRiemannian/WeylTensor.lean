@@ -34,6 +34,19 @@ C_abcd = R_abcd - (2/(n-2))(g_a[c R_d]b - g_b[c R_d]a) + (2R/((n-1)(n-2)))g_a[c 
 * In vacuum (Ricci-flat) spacetimes, the Weyl tensor equals the Riemann tensor
 * The Weyl tensor describes gravitational waves (propagating degrees of freedom)
 * It also encodes tidal forces through the geodesic deviation equation
+* The Weyl tensor is conformally invariant (up to a power of the conformal factor)
+* In 3 dimensions, the Weyl tensor vanishes identically (all 3D spacetimes are
+  conformally flat)
+
+## Petrov Classification (4D)
+
+In 4 dimensions, the Weyl tensor can be classified according to the Petrov classification:
+- Type I (general): Four distinct principal null directions
+- Type II: Two coincident, two distinct
+- Type D (degenerate): Two pairs of coincident (e.g., Schwarzschild, Kerr)
+- Type III: Three coincident, one distinct
+- Type N (null): Four coincident (pure gravitational radiation)
+- Type O: Conformally flat (Weyl tensor vanishes)
 
 ## References
 
@@ -111,19 +124,6 @@ noncomputable def weylTensor (g : PseudoRiemannianMetric E H M n I) : WeylTensor
 
 variable (g : PseudoRiemannianMetric E H M n I)
 
-/-- In vacuum (Ricci-flat) spacetimes, the Weyl tensor equals the (0,4) Riemann tensor.
-This is because the trace-free part of a trace-free tensor is itself.
-Here we use the `riemannLower` function to convert from (1,3) to (0,4) tensor. -/
-axiom weyl_equals_riemann_in_vacuum (Ric : RicciTensor g) (x : M)
-    (hRic : ∀ u v, Ric x u v = 0) :
-    ∀ u v w z, (weylTensor g).toWeylTensorField x u v w z = riemannLower g (riemannTensor g) x u v w z
-
-/-- The Weyl tensor is conformally invariant (up to a power of the conformal factor).
-Under a conformal transformation g' = Ω² g, we have C' = Ω² C.
-This property is why the Weyl tensor is also called the "conformal tensor". -/
-axiom weylTensor_conformalInvariance (Ω : M → ℝ) (hΩ : ∀ x, Ω x > 0) :
-    True -- Placeholder for the full conformal transformation statement
-
 /-! ## Petrov Classification (for 4D spacetimes) -/
 
 /-- In 4 dimensions, the Weyl tensor can be classified according to the Petrov classification.
@@ -154,11 +154,11 @@ This means it can be conformally mapped to flat Minkowski space. -/
 def isConformallyFlat (x : M) : Prop :=
   ∀ u v w z : TangentSpace I x, (weylTensor g).toWeylTensorField x u v w z = 0
 
-/-- In 3 dimensions, all spacetimes are conformally flat (Weyl tensor vanishes identically).
-This is a fundamental result in differential geometry. -/
-axiom weyl_vanishes_in_3d
-    (hdim : ∀ x : M, Module.finrank ℝ (TangentSpace I x) = 3) :
-    ∀ x, isConformallyFlat g x
+/-- The Weyl tensor vanishes where the spacetime is conformally flat. -/
+lemma weyl_zero_iff_conformallyFlat (x : M) :
+    isConformallyFlat g x ↔
+    ∀ u v w z : TangentSpace I x, (weylTensor g).toWeylTensorField x u v w z = 0 := by
+  rfl
 
 end PseudoRiemannianMetric
 end

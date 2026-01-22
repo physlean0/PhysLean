@@ -20,17 +20,17 @@ geodesics converge or diverge.
 * `GeodesicDeviation`: The deviation vector between nearby geodesics
 * `JacobiField`: Solutions to the Jacobi (geodesic deviation) equation
 
-## Main Results
+## Key Equations
 
-* `geodesic_deviation_equation`: D²ξ/dτ² = R(T, ξ)T where ξ is the deviation vector
-* `tidal_force_interpretation`: Curvature measures tidal forces between geodesics
+Geodesic deviation equation:
+  D²ξᵘ/dτ² + Rᵘ_νρσ T^ν ξ^ρ T^σ = 0
+
+Raychaudhuri equation:
+  dθ/dτ = -θ²/3 - σ² + ω² - R_{μν} v^μ v^ν
 
 ## Physical Interpretation
 
-The geodesic deviation equation:
-  D²ξᵘ/dτ² + Rᵘ_νρσ T^ν ξ^ρ T^σ = 0
-
-describes how:
+The geodesic deviation equation describes how:
 - In flat spacetime, parallel geodesics remain parallel (ξ constant)
 - In curved spacetime, geodesics converge (positive curvature) or diverge (negative)
 - This is the origin of tidal forces in general relativity
@@ -57,7 +57,8 @@ variable [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M] [ChartedSp
 variable {I : ModelWithCorners ℝ E H}
 variable [IsManifold I (n + 1) M]
 variable [inst_tangent_findim : ∀ (x : M), FiniteDimensional ℝ (TangentSpace I x)]
-variable (g : PseudoRiemannianMetric E H M n I)
+variable {g : PseudoRiemannianMetric E H M n I}
+variable {conn : LeviCivitaConnection g}
 
 /-! ## Geodesic Curves -/
 
@@ -89,17 +90,6 @@ def GeodesicData.isNull (γ : GeodesicData g conn) : Prop :=
 def GeodesicData.isSpacelike (γ : GeodesicData g conn) : Prop :=
   ∀ τ : ℝ, IsSpacelike g (γ.curve τ) (γ.tangent τ)
 
-/-- The causal character of a geodesic is preserved along the curve.
-This is a consequence of the metric being parallel (∇g = 0) and the geodesic equation. -/
-axiom geodesic_causal_character_preserved
-    (conn : LeviCivitaConnection g) (γ : GeodesicData g conn) :
-    (γ.isTimelike → ∀ τ₁ τ₂ : ℝ, IsTimelike g (γ.curve τ₁) (γ.tangent τ₁) →
-      IsTimelike g (γ.curve τ₂) (γ.tangent τ₂)) ∧
-    (γ.isNull → ∀ τ₁ τ₂ : ℝ, IsNull g (γ.curve τ₁) (γ.tangent τ₁) →
-      IsNull g (γ.curve τ₂) (γ.tangent τ₂)) ∧
-    (γ.isSpacelike → ∀ τ₁ τ₂ : ℝ, IsSpacelike g (γ.curve τ₁) (γ.tangent τ₁) →
-      IsSpacelike g (γ.curve τ₂) (γ.tangent τ₂))
-
 /-! ## Affine Parameter -/
 
 /-- A geodesic parameter τ is affine if the tangent vector has constant norm:
@@ -107,11 +97,6 @@ d/dτ g(T,T) = 0. For timelike geodesics, τ is proper time. -/
 def isAffineParameter (conn : LeviCivitaConnection g) (γ : GeodesicData g conn) : Prop :=
   ∀ τ₁ τ₂ : ℝ, g.val (γ.curve τ₁) (γ.tangent τ₁) (γ.tangent τ₁) =
               g.val (γ.curve τ₂) (γ.tangent τ₂) (γ.tangent τ₂)
-
-/-- The geodesic equation preserves the norm of the tangent vector,
-so geodesics are naturally affinely parametrized. -/
-axiom geodesic_preserves_norm (conn : LeviCivitaConnection g) (γ : GeodesicData g conn) :
-    isAffineParameter g conn γ
 
 /-! ## Geodesic Deviation (Jacobi Equation) -/
 
@@ -130,25 +115,6 @@ structure JacobiField (conn : LeviCivitaConnection g) (γ : GeodesicData g conn)
   deviation : ∀ τ : ℝ, TangentSpace I (γ.curve τ)
   /-- The first covariant derivative of the deviation (velocity of separation) -/
   deviation_deriv : ∀ τ : ℝ, TangentSpace I (γ.curve τ)
-  /-- The Jacobi (geodesic deviation) equation -/
-  jacobi_eq : ∀ _τ : ℝ,
-    -- D²ξ/dτ² = -R(T, ξ)T (second covariant derivative equals curvature term)
-    True  -- Full formulation requires proper second covariant derivative
-
-/-- The geodesic deviation equation in component form:
-D²ξᵘ/dτ² + Rᵘ_νρσ T^ν ξ^ρ T^σ = 0
-
-This equation describes how the separation ξ between nearby geodesics changes
-as they propagate. The Riemann tensor R determines whether geodesics
-converge (positive curvature) or diverge (negative curvature).
-
-Physical interpretation:
-- In gravity: describes tidal forces (stretching/squeezing of freely falling objects)
-- The equation of motion for test particles in gravitational field -/
-axiom geodesic_deviation_equation (conn : LeviCivitaConnection g)
-    (γ : GeodesicData g conn) (ξ : JacobiField g conn γ) (τ : ℝ) :
-    -- The second covariant derivative equals the curvature term
-    True  -- D²ξᵘ/dτ² = -Rᵘ_νρσ T^ν ξ^ρ T^σ
 
 /-! ## Tidal Forces -/
 
@@ -160,15 +126,6 @@ moving with 4-velocity v. It's the physical manifestation of spacetime curvature
 def tidalTensor (R : RiemannTensor g) (x : M) (v : TangentSpace I x) :
     TangentSpace I x → TangentSpace I x :=
   fun ξ => R x v ξ v
-
-/-- The trace of the tidal tensor is related to the Ricci tensor:
-Tr(K) = R_{μν} v^μ v^ν
-
-For a unit timelike vector v, this gives the focusing rate of geodesics. -/
-axiom tidal_trace_is_ricci (R : RiemannTensor g) (Ric : RicciTensor g)
-    (x : M) (v : TangentSpace I x) :
-    ∃ (cb : CoordinateBasis g x),
-      (∑ i, g.val x (tidalTensor g R x v (cb.basis i)) (cb.basis i)) = Ric x v v
 
 /-! ## Raychaudhuri Equation -/
 
@@ -190,29 +147,44 @@ This equation is fundamental to:
 structure GeodesicCongruence (conn : LeviCivitaConnection g) where
   /-- The expansion scalar θ at each point -/
   expansion : M → ℝ
-  /-- The shear tensor σ -/
-  shear : M → ℝ
-  /-- The vorticity ω -/
-  vorticity : M → ℝ
+  /-- The shear scalar σ² -/
+  shearSquared : M → ℝ
+  /-- The vorticity ω² -/
+  vorticitySquared : M → ℝ
+  /-- Shear is non-negative -/
+  shear_nonneg : ∀ x, shearSquared x ≥ 0
+  /-- Vorticity is non-negative -/
+  vorticity_nonneg : ∀ x, vorticitySquared x ≥ 0
 
-/-- The Raychaudhuri equation for a timelike geodesic congruence. -/
-axiom raychaudhuri_equation (conn : LeviCivitaConnection g) (Ric : RicciTensor g)
-    (C : GeodesicCongruence g conn) (v : ∀ x : M, TangentSpace I x) (x : M) :
-    -- dθ/dτ = -θ²/3 - σ² + ω² - R_{μν} v^μ v^ν
-    True  -- Full statement requires proper derivative along congruence
+/-- The Raychaudhuri rate: dθ/dτ = -θ²/3 - σ² + ω² - R_{μν} v^μ v^ν -/
+def raychaudhuriRateCongruence (g : PseudoRiemannianMetric E H M n I) {conn : LeviCivitaConnection g}
+    (C : GeodesicCongruence conn) (Ric : RicciTensor g)
+    (x : M) (v : TangentSpace I x) : ℝ :=
+  -C.expansion x^2 / 3 - C.shearSquared x + C.vorticitySquared x - Ric x v v
 
-/-- Focusing theorem: If the strong energy condition holds and geodesics
-are initially converging (θ < 0), then they must converge to a caustic
-(θ → -∞) in finite proper time.
+/-- The congruence is irrotational if vorticity vanishes. -/
+def GeodesicCongruence.isIrrotational {g : PseudoRiemannianMetric E H M n I}
+    {conn : LeviCivitaConnection g} (C : GeodesicCongruence conn) : Prop :=
+  ∀ x, C.vorticitySquared x = 0
 
-This is a key ingredient in the Penrose-Hawking singularity theorems. -/
-axiom focusing_theorem (conn : LeviCivitaConnection g) (Ric : RicciTensor g)
-    (C : GeodesicCongruence g conn) (v : ∀ x : M, TangentSpace I x)
-    (hv : ∀ x, IsTimelike g x (v x))
-    (hSEC : ∀ x, Ric x (v x) (v x) ≥ 0)  -- Strong energy condition on Ricci
-    (x₀ : M) (hθ : C.expansion x₀ < 0) :
-    -- There exists τ* such that θ → -∞ as τ → τ*
-    True
+/-- Focusing theorem condition: for irrotational geodesics with SEC,
+expansion decreases faster than -θ²/3.
+
+When the congruence is irrotational (ω² = 0) and the null energy condition holds
+(Ric(v,v) ≥ 0), the rate of change of expansion is bounded by -θ²/3, which leads
+to focusing of geodesics. -/
+lemma raychaudhuri_focusing_congruence (g : PseudoRiemannianMetric E H M n I)
+    {conn : LeviCivitaConnection g}
+    (C : GeodesicCongruence conn)
+    (Ric : RicciTensor g) (x : M) (v : TangentSpace I x)
+    (h_irrot : C.isIrrotational)
+    (h_nec : (Ric x).toFun v v ≥ 0) :
+    raychaudhuriRateCongruence g C Ric x v ≤ -C.expansion x^2 / 3 := by
+  unfold raychaudhuriRateCongruence
+  have h1 : -C.shearSquared x ≤ 0 := by linarith [C.shear_nonneg x]
+  have h2 : C.vorticitySquared x = 0 := h_irrot x
+  have h3 : -(Ric x).toFun v v ≤ 0 := by linarith
+  linarith
 
 end PseudoRiemannianMetric
 end

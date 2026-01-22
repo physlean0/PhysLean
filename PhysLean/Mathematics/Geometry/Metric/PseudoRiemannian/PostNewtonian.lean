@@ -17,16 +17,9 @@ for gravitational wave physics.
 ## Main Definitions
 
 * `PNOrder`: The post-Newtonian order (0PN, 1PN, 2PN, etc.)
-* `NewtonianPotential`: The Newtonian gravitational potential Φ
-* `PNMetric`: The metric expanded to a given PN order
-* `PNParameter`: The small parameter v²/c² ~ GM/(c²r)
-
-## Main Results
-
-* `newtonian_limit`: At 0PN, GR reduces to Newtonian gravity
-* `pn_equations_of_motion`: Equations of motion at various PN orders
-* `pn_perihelion_precession`: Mercury precession from 1PN terms
-* `pn_gravitational_waves`: Quadrupole radiation at leading order
+* `newtonianPotential`: The Newtonian gravitational potential Φ
+* `PNMetricComponents`: The metric expanded to a given PN order
+* `PPNParameters`: The parameterized post-Newtonian framework
 
 ## Physical Interpretation
 
@@ -53,19 +46,7 @@ Applications:
 
 noncomputable section
 
-open Bundle Set Finset Function Filter Module Topology ContinuousLinearMap
-open scoped Manifold Bundle LinearMap Dual
-
 namespace PseudoRiemannianMetric
-
-universe v w
-
-variable {E : Type v} {H : Type w} {M : Type w} {n : WithTop ℕ∞}
-variable [NormedAddCommGroup E] [NormedSpace ℝ E]
-variable [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M] [ChartedSpace H E]
-variable {I : ModelWithCorners ℝ E H}
-variable [IsManifold I (n + 1) M]
-variable [inst_tangent_findim : ∀ (x : M), FiniteDimensional ℝ (TangentSpace I x)]
 
 /-! ## Post-Newtonian Parameters -/
 
@@ -83,6 +64,9 @@ structure PNOrder where
 /-- The small parameter ε ~ v²/c² ~ GM/(c²r) that controls the PN expansion. -/
 def pnParameter (v c : ℝ) : ℝ := (v / c)^2
 
+/-- The PN parameter is non-negative. -/
+lemma pnParameter_nonneg (v c : ℝ) : pnParameter v c ≥ 0 := sq_nonneg _
+
 /-- The characteristic velocity in a gravitational system: v² ~ GM/r. -/
 def characteristicVelocitySquared (mass r : ℝ) : ℝ := mass / r
 
@@ -92,12 +76,22 @@ def characteristicVelocitySquared (mass r : ℝ) : ℝ := mass / r
 This is the leading-order term in the PN expansion. -/
 def newtonianPotential (mass r : ℝ) : ℝ := -mass / r
 
-/-- The Newtonian potential satisfies the Poisson equation: ∇²Φ = 4πρ. -/
-axiom poisson_equation :
-    True  -- ∇²Φ = 4πρ
+/-- The Newtonian potential is negative for positive mass and radius. -/
+lemma newtonianPotential_neg (mass r : ℝ) (hm : mass > 0) (hr : r > 0) :
+    newtonianPotential mass r < 0 := by
+  unfold newtonianPotential
+  have h : mass / r > 0 := div_pos hm hr
+  simp only [neg_div]
+  linarith
 
-/-- The Newtonian gravitational acceleration: g = -∇Φ = -GM/r² r̂. -/
+/-- The Newtonian gravitational acceleration: g = -∇Φ = GM/r². -/
 def newtonianAcceleration (mass r : ℝ) : ℝ := mass / r^2
+
+/-- The Newtonian acceleration is positive for positive mass and radius. -/
+lemma newtonianAcceleration_pos (mass r : ℝ) (hm : mass > 0) (hr : r > 0) :
+    newtonianAcceleration mass r > 0 := by
+  unfold newtonianAcceleration
+  positivity
 
 /-- In the Newtonian limit, the metric is:
 ds² = -(1 + 2Φ/c²)c²dt² + (1 - 2Φ/c²)(dx² + dy² + dz²)
@@ -105,11 +99,6 @@ At leading order in Φ/c². -/
 def newtonianLimitMetric (phi : ℝ) : ℝ × ℝ :=
   (-(1 + 2 * phi),  -- g_tt (with c = 1)
    1 - 2 * phi)     -- g_ii (spatial diagonal)
-
-/-- The geodesic equation in the Newtonian limit gives Newton's second law:
-d²x/dt² = -∇Φ. -/
-axiom newtonian_limit_geodesic :
-    True  -- Geodesic → Newton's law at 0PN
 
 /-! ## Post-Newtonian Metric -/
 
@@ -126,11 +115,6 @@ structure PNMetricComponents where
   psi : ℝ → ℝ → ℝ → ℝ
   /-- The PN order to which this is valid -/
   validOrder : PNOrder
-
-/-- The gravitomagnetic potential arises from mass currents (moving matter).
-∇²A = -4πρv (in appropriate gauge). -/
-axiom gravitomagnetic_source :
-    True  -- A sourced by mass current
 
 /-- The 1PN metric in terms of potentials:
 g_00 = -1 + 2Φ - 2Φ²
@@ -157,8 +141,10 @@ structure PPNParameters where
   alpha2 : ℝ
   /-- ξ measures preferred-location effects. GR: ξ = 0. -/
   xi : ℝ
-  /-- Default: GR values -/
-  is_GR : Prop := gamma = 1 ∧ beta = 1 ∧ alpha1 = 0 ∧ alpha2 = 0 ∧ xi = 0
+
+/-- Check if PPN parameters match GR. -/
+def PPNParameters.isGR (ppn : PPNParameters) : Prop :=
+  ppn.gamma = 1 ∧ ppn.beta = 1 ∧ ppn.alpha1 = 0 ∧ ppn.alpha2 = 0 ∧ ppn.xi = 0
 
 /-- The standard PPN parameters for general relativity. -/
 def grPPNParameters : PPNParameters where
@@ -168,11 +154,10 @@ def grPPNParameters : PPNParameters where
   alpha2 := 0
   xi := 0
 
-/-- Current observational constraints on PPN parameters:
-|γ - 1| < 2×10⁻⁵ (Cassini)
-|β - 1| < 8×10⁻⁵ (perihelion + Nordtvedt) -/
-axiom ppn_observational_constraints :
-    True  -- Tight constraints on γ and β
+/-- GR parameters satisfy isGR. -/
+lemma grPPNParameters_isGR : grPPNParameters.isGR := by
+  unfold PPNParameters.isGR grPPNParameters
+  simp
 
 /-! ## Classical Tests of GR -/
 
@@ -182,15 +167,30 @@ For Mercury: 42.98 arcsec/century. -/
 def pnPerihelionPrecession (mass semiMajorAxis eccentricity : ℝ) : ℝ :=
   6 * Real.pi * mass / (semiMajorAxis * (1 - eccentricity^2))
 
-/-- The perihelion precession of Mercury was the first confirmation of GR. -/
-axiom mercury_precession_confirmed :
-    True  -- 42.98''/century observed
+/-- The precession is positive for valid orbital parameters. -/
+lemma pnPerihelion_pos (mass a e : ℝ) (hm : mass > 0) (ha : a > 0)
+    (he : 0 ≤ e ∧ e < 1) :
+    pnPerihelionPrecession mass a e > 0 := by
+  unfold pnPerihelionPrecession
+  apply div_pos
+  · apply mul_pos
+    · apply mul_pos (by norm_num : (6 : ℝ) > 0) Real.pi_pos
+    · exact hm
+  · apply mul_pos ha
+    have h : e^2 < 1 := by nlinarith
+    linarith
 
 /-- Light deflection in the PPN formalism:
 Δθ = (1 + γ) × 2GM/(c²b)
 GR (γ = 1) gives Δθ = 4GM/(c²b). -/
 def ppnDeflectionAngle (ppn : PPNParameters) (mass impactParameter : ℝ) : ℝ :=
   (1 + ppn.gamma) * 2 * mass / impactParameter
+
+/-- For GR parameters, the deflection is 4M/b. -/
+lemma ppnDeflection_gr (mass b : ℝ) :
+    ppnDeflectionAngle grPPNParameters mass b = 4 * mass / b := by
+  unfold ppnDeflectionAngle grPPNParameters
+  ring
 
 /-- The Shapiro time delay in the PPN formalism:
 Δt = (1 + γ) × 2GM/c³ × ln(...). -/
@@ -201,130 +201,109 @@ def ppnShapiroDelay (ppn : PPNParameters) (mass : ℝ) (geometricFactor : ℝ) :
 Δν/ν = ΔΦ/c². This is independent of γ and β. -/
 def gravitationalRedshiftPN (deltaPhi : ℝ) : ℝ := deltaPhi
 
-/-! ## Equations of Motion -/
-
-/-- The 1PN equations of motion for a test particle.
-Includes terms like (v/c)²∇Φ, Φ∇Φ, etc. -/
-axiom pn1_equations_of_motion :
-    True  -- 1PN geodesic equation
-
-/-- The 1PN acceleration in the PPN formalism:
-a = ∇Φ × [1 + (γ+β)Φ + γv² - ...]. -/
-axiom ppn_acceleration :
-    True  -- Full PPN acceleration formula
-
-/-- The Einstein-Infeld-Hoffmann equations describe the PN motion of
-N gravitating bodies to 1PN order. -/
-axiom einstein_infeld_hoffmann_equations :
-    True  -- N-body 1PN dynamics
-
 /-! ## Gravitational Waves in PN Formalism -/
-
-/-- The leading-order (Newtonian) quadrupole moment:
-I_ij = ∑_a m_a x_i^a x_j^a. -/
-def quadrupoleMoment (masses : List ℝ) (positions : List (ℝ × ℝ × ℝ)) : ℝ :=
-  0  -- Placeholder for tensor
-
-/-- The quadrupole formula for gravitational wave luminosity:
-L = (G/5c⁵) ⟨(d³I_ij/dt³)²⟩
-This appears at 2.5PN order (first dissipative effect). -/
-axiom pn_quadrupole_formula :
-    True  -- L = (1/5) ⟨Ï̈_ij Ï̈_ij⟩
 
 /-- The energy loss rate for a circular binary at leading order:
 dE/dt = -(32/5)(G⁴/c⁵)(m₁m₂)²(m₁+m₂)/r⁵. -/
 def binaryEnergyLossRate (m1 m2 r : ℝ) : ℝ :=
   -(32/5) * (m1 * m2)^2 * (m1 + m2) / r^5
 
+/-- The energy loss rate is negative (energy is radiated away). -/
+lemma binaryEnergyLoss_neg (m1 m2 r : ℝ) (hm1 : m1 > 0) (hm2 : m2 > 0) (hr : r > 0) :
+    binaryEnergyLossRate m1 m2 r < 0 := by
+  unfold binaryEnergyLossRate
+  have h : (32/5 : ℝ) * (m1 * m2)^2 * (m1 + m2) / r^5 > 0 := by
+    apply div_pos
+    · apply mul_pos
+      · apply mul_pos (by norm_num : (32/5 : ℝ) > 0)
+        exact sq_pos_of_pos (mul_pos hm1 hm2)
+      · linarith
+    · positivity
+  simp only [neg_mul, neg_div]
+  linarith
+
 /-- The orbital decay rate (Peters formula):
 da/dt = -(64/5)(G³/c⁵)(m₁m₂(m₁+m₂))/a³ for circular orbit. -/
 def orbitalDecayRate (m1 m2 a : ℝ) : ℝ :=
   -(64/5) * (m1 * m2 * (m1 + m2)) / a^3
 
-/-- The Hulse-Taylor binary pulsar confirms the quadrupole formula. -/
-axiom hulse_taylor_confirmation :
-    True  -- Orbital decay matches GR prediction to < 0.2%
-
-/-! ## Higher PN Orders -/
-
-/-- At 2PN, additional velocity and potential corrections appear.
-The metric includes terms like Φ³, v⁴, etc. -/
-axiom pn2_metric :
-    True  -- 2PN metric corrections
-
-/-- At 2.5PN, radiation reaction appears: the first odd power of v/c.
-This breaks time-reversal symmetry. -/
-axiom pn2_5_radiation_reaction :
-    True  -- First dissipative term
-
-/-- The 3PN and higher orders are needed for gravitational wave templates.
-LIGO/Virgo use waveforms computed to 3.5PN or higher. -/
-axiom high_order_pn_waveforms :
-    True  -- Needed for GW detection
-
-/-- The PN expansion breaks down when v ~ c or r ~ GM/c²
-(near black holes, neutron star surfaces, etc.). -/
-axiom pn_breakdown_strong_field :
-    True  -- PN invalid near horizon
+/-- The orbital decay rate is negative (orbit shrinks). -/
+lemma orbitalDecay_neg (m1 m2 a : ℝ) (hm1 : m1 > 0) (hm2 : m2 > 0) (ha : a > 0) :
+    orbitalDecayRate m1 m2 a < 0 := by
+  unfold orbitalDecayRate
+  have h : (64/5 : ℝ) * (m1 * m2 * (m1 + m2)) / a^3 > 0 := by
+    apply div_pos
+    · apply mul_pos (by norm_num : (64/5 : ℝ) > 0)
+      apply mul_pos (mul_pos hm1 hm2)
+      linarith
+    · positivity
+  simp only [neg_mul, neg_div]
+  linarith
 
 /-! ## Frame Dragging -/
 
 /-- Frame dragging (Lense-Thirring effect) arises from the gravitomagnetic potential.
-The precession rate of a gyroscope: Ω_LT = GJ/(c²r³) × (3(J·r̂)r̂ - J). -/
+The precession rate of a gyroscope: Ω_LT ~ GJ/(c²r³). -/
 def lenseThirringPrecessionRate (angularMomentum r : ℝ) : ℝ :=
   angularMomentum / r^3
 
-/-- The Gravity Probe B experiment confirmed frame dragging at ~19% precision. -/
-axiom gravity_probe_b_confirmation :
-    True  -- Frame dragging confirmed
-
-/-- The LAGEOS satellites also measure frame dragging from Earth's rotation. -/
-axiom lageos_frame_dragging :
-    True  -- Earth's frame dragging measured
+/-- The Lense-Thirring rate is positive for positive J and r. -/
+lemma lenseThirring_rate_pos (J r : ℝ) (hJ : J > 0) (hr : r > 0) :
+    lenseThirringPrecessionRate J r > 0 := by
+  unfold lenseThirringPrecessionRate
+  positivity
 
 /-! ## Gravitoelectromagnetism -/
 
-/-- In the weak-field, slow-motion limit, gravity resembles electromagnetism.
-The gravitoelectric field: E_g = -∇Φ
-The gravitomagnetic field: B_g = ∇×A. -/
-def gravitoelectricField (phi : ℝ → ℝ → ℝ → ℝ) : ℝ → ℝ → ℝ → ℝ :=
-  fun _ _ _ => 0  -- Placeholder for -∇Φ
+/-- The gravitoelectric field is defined as E_g = -∇Φ.
+In this simplified model, we represent it as a function. -/
+structure GravitoelectricField where
+  /-- The gravitoelectric field components -/
+  Ex : ℝ → ℝ → ℝ → ℝ
+  Ey : ℝ → ℝ → ℝ → ℝ
+  Ez : ℝ → ℝ → ℝ → ℝ
 
-/-- The gravitoelectric field is the Newtonian gravitational field. -/
-lemma gravitoelectric_is_newtonian :
-    True := trivial  -- E_g = g
-
-/-- The Lorentz-like force in gravitoelectromagnetism:
-F = m(E_g + 4v × B_g).
-The factor of 4 differs from electromagnetism. -/
-axiom gravitoem_lorentz_force :
-    True  -- F = m(E_g + 4v × B_g)
-
-/-- Maxwell-like equations for gravitoelectromagnetism:
-∇·E_g = -4πρ,  ∇×B_g = -4πJ/c + (1/c)∂E_g/∂t, etc. -/
-axiom gravitoem_maxwell_equations :
-    True  -- GEM field equations
+/-- The gravitomagnetic field is defined as B_g = ∇×A. -/
+structure GravitomageticField where
+  /-- The gravitomagnetic field components -/
+  Bx : ℝ → ℝ → ℝ → ℝ
+  By : ℝ → ℝ → ℝ → ℝ
+  Bz : ℝ → ℝ → ℝ → ℝ
 
 /-! ## Solar System Applications -/
 
 /-- De Sitter (geodetic) precession: precession of a gyroscope in orbit.
-Ω_dS = (3/2)(GM/c²r) × v × r̂. -/
+Ω_dS = (3/2)(GM/c²r) × v. -/
 def deSitterPrecessionRate (mass r v : ℝ) : ℝ :=
   (3/2) * mass * v / r
 
-/-- The Moon's orbit exhibits de Sitter precession (Lunar Laser Ranging). -/
-axiom lunar_laser_ranging_precession :
-    True  -- De Sitter precession measured
+/-- The de Sitter precession rate is positive for positive parameters. -/
+lemma deSitter_rate_pos (mass r v : ℝ) (hm : mass > 0) (hr : r > 0) (hv : v > 0) :
+    deSitterPrecessionRate mass r v > 0 := by
+  unfold deSitterPrecessionRate
+  positivity
 
-/-- GPS satellites require both special and general relativistic corrections.
-Without corrections, position errors would accumulate at ~10 km/day. -/
-axiom gps_relativistic_corrections :
-    True  -- SR + GR corrections essential for GPS
+/-- The total precession rate combines de Sitter and Lense-Thirring effects. -/
+def totalPrecessionRate (mass angularMomentum r v : ℝ) : ℝ :=
+  deSitterPrecessionRate mass r v + lenseThirringPrecessionRate angularMomentum r
 
-/-- The Nordtvedt effect: test of the strong equivalence principle.
-If gravity gravitates differently, the Moon's orbit would be affected. -/
-axiom nordtvedt_effect_test :
-    True  -- SEP tested via lunar ranging
+/-! ## PN Order Comparisons -/
+
+/-- 0PN is Newtonian gravity. -/
+def pn0 : PNOrder where order := 0
+
+/-- 1PN includes first relativistic corrections. -/
+def pn1 : PNOrder where order := 1
+
+/-- 2PN includes second-order corrections. -/
+def pn2 : PNOrder where order := 2
+
+/-- 2.5PN is the first dissipative (radiation reaction) order. -/
+def pn2_5 : PNOrder where order := 2; halfOrder := true
+
+/-- Higher PN order means more precision. -/
+lemma pn_order_comparison : pn0.order < pn1.order ∧ pn1.order < pn2.order := by
+  constructor <;> norm_num [pn0, pn1, pn2]
 
 end PseudoRiemannianMetric
 end

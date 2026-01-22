@@ -15,20 +15,13 @@ describing weak gravitational fields as small perturbations of flat spacetime.
 
 ## Main Definitions
 
-* `LinearizedMetric`: The metric as η_μν + h_μν where h is a small perturbation
+* `MetricPerturbation`: The metric as η_μν + h_μν where h is a small perturbation
 * `GaugeTransformation`: Infinitesimal coordinate transformations
-* `TransverseTracelessGauge`: The TT gauge for gravitational waves
+* `TTGauge`: The transverse-traceless gauge for gravitational waves
 * `GravitationalWave`: A propagating solution to the linearized Einstein equations
 * `GWPolarization`: The plus (+) and cross (×) polarization modes
 
-## Main Results
-
-* `linearized_einstein_eq`: □h̄_μν = -16πG T_μν in Lorenz gauge
-* `wave_equation_vacuum`: □h_μν = 0 in vacuum (TT gauge)
-* `gw_transverse`: Gravitational waves are transverse to propagation direction
-* `gw_quadrupole_formula`: Leading order GW emission from accelerating masses
-
-## Physical Interpretation
+## Physical Background
 
 Gravitational waves are:
 - Ripples in spacetime curvature propagating at the speed of light
@@ -47,19 +40,7 @@ The linearized theory is valid when |h_μν| << 1, i.e., weak gravitational fiel
 
 noncomputable section
 
-open Bundle Set Finset Function Filter Module Topology ContinuousLinearMap
-open scoped Manifold Bundle LinearMap Dual
-
 namespace PseudoRiemannianMetric
-
-universe v w
-
-variable {E : Type v} {H : Type w} {M : Type w} {n : WithTop ℕ∞}
-variable [NormedAddCommGroup E] [NormedSpace ℝ E]
-variable [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M] [ChartedSpace H E]
-variable {I : ModelWithCorners ℝ E H}
-variable [IsManifold I (n + 1) M]
-variable [inst_tangent_findim : ∀ (x : M), FiniteDimensional ℝ (TangentSpace I x)]
 
 /-! ## Linearized Metric Perturbation -/
 
@@ -75,13 +56,17 @@ structure MetricPerturbation where
   h : Fin 4 → Fin 4 → ℝ → ℝ → ℝ → ℝ → ℝ  -- h_μν(t, x, y, z)
   /-- Symmetry: h_μν = h_νμ -/
   symm : ∀ μ ν t x y z, h μ ν t x y z = h ν μ t x y z
-  /-- Smallness condition (formal; actual bound depends on context) -/
-  small : True  -- |h_μν| << 1
 
 /-- The trace of the metric perturbation: h = η^μν h_μν.
 With signature (-,+,+,+): h = -h_00 + h_11 + h_22 + h_33 -/
 def MetricPerturbation.trace (hp : MetricPerturbation) (t x y z : ℝ) : ℝ :=
   -hp.h 0 0 t x y z + hp.h 1 1 t x y z + hp.h 2 2 t x y z + hp.h 3 3 t x y z
+
+/-- The Minkowski metric component η_μν. -/
+def minkowskiComponent (μ ν : Fin 4) : ℝ :=
+  if μ = 0 ∧ ν = 0 then -1
+  else if μ = ν then 1
+  else 0
 
 /-- The trace-reversed perturbation: h̄_μν = h_μν - (1/2)η_μν h.
 This simplifies the linearized Einstein equations. -/
@@ -89,10 +74,7 @@ def MetricPerturbation.traceReversed (hp : MetricPerturbation) :
     Fin 4 → Fin 4 → ℝ → ℝ → ℝ → ℝ → ℝ :=
   fun μ ν t x y z =>
     let h_tr := hp.trace t x y z
-    let η_μν := if μ = 0 ∧ ν = 0 then -1
-                else if μ = ν then 1
-                else 0
-    hp.h μ ν t x y z - (1/2) * η_μν * h_tr
+    hp.h μ ν t x y z - (1/2) * minkowskiComponent μ ν * h_tr
 
 /-! ## Gauge Transformations -/
 
@@ -104,33 +86,10 @@ structure GaugeTransformation where
   ξ : Fin 4 → ℝ → ℝ → ℝ → ℝ → ℝ
 
 /-- The Lorenz gauge condition (de Donder gauge): ∂^μ h̄_μν = 0.
-This is the gravitational analog of the Lorenz gauge in electromagnetism.
-Equivalently: ∂^μ h_μν = (1/2) ∂_ν h -/
-def satisfiesLorenzGauge (hp : MetricPerturbation) : Prop :=
-  True  -- ∂^μ h̄_μν = 0 for all ν
-
-/-- The Lorenz gauge can always be achieved by a suitable gauge transformation. -/
-axiom lorenz_gauge_exists (hp : MetricPerturbation) :
-    ∃ (ξ : GaugeTransformation), True  -- ∃ transformation to Lorenz gauge
-
-/-! ## Linearized Einstein Equations -/
-
-/-- The d'Alembertian (wave operator) in flat spacetime: □ = -∂_t² + ∇². -/
-def dAlembertian (f : ℝ → ℝ → ℝ → ℝ → ℝ) : ℝ → ℝ → ℝ → ℝ → ℝ :=
-  fun _t _x _y _z => 0  -- Placeholder for actual wave operator
-
-/-- The linearized Einstein equations in Lorenz gauge:
-□h̄_μν = -16πG T_μν
-
-In vacuum (T = 0): □h̄_μν = 0, a wave equation! -/
-axiom linearized_einstein_eq (hp : MetricPerturbation)
-    (hLorenz : satisfiesLorenzGauge hp) :
-    True  -- □h̄_μν = -16πG T_μν
-
-/-- In vacuum, the trace-reversed perturbation satisfies the wave equation. -/
-axiom vacuum_wave_equation (hp : MetricPerturbation)
-    (hLorenz : satisfiesLorenzGauge hp) :
-    True  -- □h̄_μν = 0 in vacuum
+This is the gravitational analog of the Lorenz gauge in electromagnetism. -/
+structure LorenzGauge extends MetricPerturbation where
+  /-- The Lorenz condition is satisfied -/
+  lorenz_condition : True  -- ∂^μ h̄_μν = 0 for all ν
 
 /-! ## Gravitational Waves -/
 
@@ -146,8 +105,10 @@ structure TTGauge extends MetricPerturbation where
   temporal_zero : ∀ μ t x y z, h 0 μ t x y z = 0
   /-- Spatial trace vanishes: h_11 + h_22 + h_33 = 0 -/
   spatial_traceless : ∀ t x y z, h 1 1 t x y z + h 2 2 t x y z + h 3 3 t x y z = 0
-  /-- Transverse: ∂^i h_ij = 0 for each j -/
-  transverse : True
+
+/-- In TT gauge, h_00 also vanishes by symmetry. -/
+lemma TTGauge.h00_zero (tt : TTGauge) (t x y z : ℝ) : tt.h 0 0 t x y z = 0 :=
+  tt.temporal_zero 0 t x y z
 
 /-- A gravitational wave propagating in the z-direction.
 In TT gauge, the only non-zero components are h_+ = h_xx = -h_yy and h_× = h_xy = h_yx. -/
@@ -168,19 +129,9 @@ inductive GWPolarization
   | plus   -- h_+ mode: stretches x, compresses y (and vice versa)
   | cross  -- h_× mode: stretches along 45°, compresses along 135°
 
-/-- Gravitational waves travel at the speed of light. -/
-axiom gw_speed_of_light (gw : GravitationalWave) :
-    True  -- Phase velocity = group velocity = c = 1
-
-/-- Gravitational waves are transverse: the oscillation is perpendicular to propagation. -/
-axiom gw_transverse (gw : GravitationalWave) :
-    True  -- Perturbation in x-y plane for z-propagating wave
-
-/-- Gravitational waves carry energy, momentum, and angular momentum.
-The Isaacson stress-energy tensor gives the effective energy density:
-ρ_GW = (c²/32πG) ⟨ḣ_ij ḣ^ij⟩ -/
-axiom gw_energy_momentum (gw : GravitationalWave) :
-    True  -- GWs carry energy-momentum
+/-- A gravitational wave satisfies the dispersion relation ω = k. -/
+lemma gw_dispersion (gw : GravitationalWave) : gw.wavenumber = gw.frequency :=
+  gw.dispersion
 
 /-! ## Monochromatic Plane Waves -/
 
@@ -200,11 +151,17 @@ structure MonochromaticGW extends GravitationalWave where
   h_plus_form : ∀ u, h_plus u = A_plus * Real.cos (frequency * u + φ_plus)
   h_cross_form : ∀ u, h_cross u = A_cross * Real.cos (frequency * u + φ_cross)
 
-/-- A circularly polarized gravitational wave has equal amplitudes and 90° phase difference.
-Right circular: φ_× - φ_+ = π/2
-Left circular: φ_× - φ_+ = -π/2 -/
+/-- A circularly polarized gravitational wave has equal amplitudes and 90° phase difference. -/
 def isCircularlyPolarized (gw : MonochromaticGW) : Prop :=
   gw.A_plus = gw.A_cross ∧ |gw.φ_cross - gw.φ_plus| = Real.pi / 2
+
+/-- A linearly polarized wave has one zero amplitude. -/
+def isLinearlyPolarizedPlus (gw : MonochromaticGW) : Prop :=
+  gw.A_cross = 0
+
+/-- A linearly polarized wave has one zero amplitude. -/
+def isLinearlyPolarizedCross (gw : MonochromaticGW) : Prop :=
+  gw.A_plus = 0
 
 /-! ## Quadrupole Formula -/
 
@@ -220,38 +177,13 @@ structure QuadrupoleMoment where
   /-- Traceless -/
   traceless : ∀ t, Q 0 0 t + Q 1 1 t + Q 2 2 t = 0
 
-/-- The quadrupole formula: gravitational wave strain at distance r from a source.
-h_ij^TT = (2G/c⁴r) Q̈_ij^TT
-
-In geometric units: h_ij^TT = (2/r) Q̈_ij^TT -/
-axiom quadrupole_formula (Q : QuadrupoleMoment) (r : ℝ) :
-    True  -- h_ij = (2/r) d²Q_ij/dt²
-
-/-- Power radiated in gravitational waves (quadrupole approximation):
-P = (G/5c⁵) ⟨Q⃛_ij Q⃛^ij⟩
-
-In geometric units: P = (1/5) ⟨Q⃛_ij Q⃛^ij⟩ -/
-axiom gw_luminosity (Q : QuadrupoleMoment) :
-    True  -- P = (1/5) ⟨d³Q/dt³ d³Q/dt³⟩
-
-/-! ## Detection: Effect on Test Masses -/
-
-/-- The effect of a gravitational wave on the separation of two test masses.
-For separation L along x-axis and plus-polarized wave: δL/L = (1/2) h_+ -/
-axiom gw_strain_effect (gw : GravitationalWave) (L : ℝ) :
-    True  -- δL = (1/2) h L
-
-/-- Gravitational waves produce tidal forces that can be measured by geodesic deviation.
-This is how detectors like LIGO work. -/
-axiom gw_geodesic_deviation (gw : GravitationalWave) :
-    True  -- GWs produce measurable relative acceleration between test masses
+/-- The quadrupole moment is symmetric. -/
+lemma QuadrupoleMoment.symmetric (Q : QuadrupoleMoment) (i j : Fin 3) (t : ℝ) :
+    Q.Q i j t = Q.Q j i t := Q.symm i j t
 
 /-! ## Binary Systems -/
 
-/-- A circular binary system emitting gravitational waves.
-The orbital frequency and strain are related by:
-h ~ (Mω)^(2/3) / r
-where M is the chirp mass and ω is the orbital angular frequency. -/
+/-- A circular binary system emitting gravitational waves. -/
 structure BinaryGWSource where
   /-- Mass of first object -/
   m₁ : ℝ
@@ -264,25 +196,111 @@ structure BinaryGWSource where
   /-- Both masses positive -/
   m₁_pos : m₁ > 0
   m₂_pos : m₂ > 0
+  /-- Separation positive -/
+  a_pos : a > 0
+  /-- Distance positive -/
+  r_pos : r > 0
+
+/-- The total mass of a binary system. -/
+def BinaryGWSource.totalMass (b : BinaryGWSource) : ℝ := b.m₁ + b.m₂
+
+/-- The total mass is positive. -/
+lemma BinaryGWSource.totalMass_pos (b : BinaryGWSource) : b.totalMass > 0 := by
+  unfold BinaryGWSource.totalMass
+  linarith [b.m₁_pos, b.m₂_pos]
+
+/-- The reduced mass of a binary system: μ = m₁m₂/(m₁+m₂). -/
+def BinaryGWSource.reducedMass (b : BinaryGWSource) : ℝ :=
+  b.m₁ * b.m₂ / (b.m₁ + b.m₂)
+
+/-- The reduced mass is positive. -/
+lemma BinaryGWSource.reducedMass_pos (b : BinaryGWSource) : b.reducedMass > 0 := by
+  unfold BinaryGWSource.reducedMass
+  apply div_pos
+  · exact mul_pos b.m₁_pos b.m₂_pos
+  · exact b.totalMass_pos
+
+/-- The symmetric mass ratio: η = μ/M = m₁m₂/(m₁+m₂)². -/
+def BinaryGWSource.symmetricMassRatio (b : BinaryGWSource) : ℝ :=
+  b.reducedMass / b.totalMass
+
+/-- The symmetric mass ratio is positive. -/
+lemma BinaryGWSource.eta_pos (b : BinaryGWSource) : b.symmetricMassRatio > 0 := by
+  unfold BinaryGWSource.symmetricMassRatio
+  exact div_pos b.reducedMass_pos b.totalMass_pos
+
+/-- The symmetric mass ratio is at most 1/4 (equal mass case). -/
+lemma BinaryGWSource.eta_le_quarter (b : BinaryGWSource) : b.symmetricMassRatio ≤ 1/4 := by
+  unfold BinaryGWSource.symmetricMassRatio BinaryGWSource.reducedMass BinaryGWSource.totalMass
+  have h : (b.m₁ - b.m₂)^2 ≥ 0 := sq_nonneg _
+  have h2 : b.m₁^2 - 2 * b.m₁ * b.m₂ + b.m₂^2 ≥ 0 := by nlinarith
+  have h3 : 4 * b.m₁ * b.m₂ ≤ (b.m₁ + b.m₂)^2 := by nlinarith
+  have h4 : b.m₁ + b.m₂ > 0 := by linarith [b.m₁_pos, b.m₂_pos]
+  have h5 : (b.m₁ + b.m₂)^2 > 0 := sq_pos_of_pos h4
+  have hne : b.m₁ + b.m₂ ≠ 0 := ne_of_gt h4
+  have h6 : b.m₁ * b.m₂ ≤ (b.m₁ + b.m₂)^2 / 4 := by linarith
+  calc b.m₁ * b.m₂ / (b.m₁ + b.m₂) / (b.m₁ + b.m₂)
+      = b.m₁ * b.m₂ / (b.m₁ + b.m₂)^2 := by field_simp [hne]
+    _ ≤ (b.m₁ + b.m₂)^2 / 4 / (b.m₁ + b.m₂)^2 := by
+        apply div_le_div_of_nonneg_right h6 (le_of_lt h5)
+    _ = 1/4 := by field_simp [hne]
 
 /-- The chirp mass M_c = (m_1 m_2)^(3/5) / (m_1 + m_2)^(1/5).
-Equivalently: M_c^5 = (m_1 m_2)^3 / (m_1 + m_2).
-This combination determines the GW signal amplitude and frequency evolution.
-
-The chirp mass is the most directly measurable quantity from GW observations
-because it determines the rate of frequency increase during inspiral. -/
+This combination determines the GW signal amplitude and frequency evolution. -/
 def BinaryGWSource.chirpMass (b : BinaryGWSource) : ℝ :=
   Real.rpow (b.m₁ * b.m₂) (3/5) / Real.rpow (b.m₁ + b.m₂) (1/5)
 
-/-- Binary orbit decays due to GW emission: da/dt < 0.
-The orbital energy is carried away by gravitational radiation. -/
-axiom binary_inspiral (b : BinaryGWSource) :
-    True  -- da/dt = -(64/5) G³ m₁ m₂ (m₁+m₂) / (c⁵ a³)
+/-- The orbital angular frequency from Kepler's law: ω² = GM/a³. -/
+def BinaryGWSource.orbitalFrequency (b : BinaryGWSource) : ℝ :=
+  Real.sqrt (b.totalMass / b.a^3)
 
-/-- The GW frequency chirps (increases) as the binary inspirals:
-df/dt > 0 as the orbit shrinks and speeds up. -/
-axiom frequency_chirp (b : BinaryGWSource) :
-    True  -- df/dt = (96/5) π^(8/3) (G M_c/c³)^(5/3) f^(11/3)
+/-- The orbital frequency is positive. -/
+lemma BinaryGWSource.orbitalFrequency_pos (b : BinaryGWSource) :
+    b.orbitalFrequency > 0 := by
+  unfold BinaryGWSource.orbitalFrequency
+  apply Real.sqrt_pos_of_pos
+  apply div_pos b.totalMass_pos
+  exact pow_pos b.a_pos 3
+
+/-- The GW frequency is twice the orbital frequency (for circular orbits). -/
+def BinaryGWSource.gwFrequency (b : BinaryGWSource) : ℝ :=
+  2 * b.orbitalFrequency
+
+/-- The GW frequency is positive. -/
+lemma BinaryGWSource.gwFrequency_pos (b : BinaryGWSource) :
+    b.gwFrequency > 0 := by
+  unfold BinaryGWSource.gwFrequency
+  linarith [b.orbitalFrequency_pos]
+
+/-! ## Energy and Power -/
+
+/-- The orbital energy of a binary (Newtonian approximation). -/
+def BinaryGWSource.orbitalEnergy (b : BinaryGWSource) : ℝ :=
+  -b.m₁ * b.m₂ / (2 * b.a)
+
+/-- The orbital energy is negative (bound system). -/
+lemma BinaryGWSource.orbitalEnergy_neg (b : BinaryGWSource) :
+    b.orbitalEnergy < 0 := by
+  unfold BinaryGWSource.orbitalEnergy
+  have h : b.m₁ * b.m₂ / (2 * b.a) > 0 := by
+    apply div_pos
+    · exact mul_pos b.m₁_pos b.m₂_pos
+    · linarith [b.a_pos]
+  simp only [neg_mul, neg_div]
+  linarith
+
+/-- The GW luminosity formula (leading order):
+L = (32/5) η² (M ω)^(10/3) in geometric units. -/
+def BinaryGWSource.gwLuminosityFactor (b : BinaryGWSource) : ℝ :=
+  (32/5) * b.symmetricMassRatio^2
+
+/-- The luminosity factor is positive. -/
+lemma BinaryGWSource.gwLuminosityFactor_pos (b : BinaryGWSource) :
+    b.gwLuminosityFactor > 0 := by
+  unfold BinaryGWSource.gwLuminosityFactor
+  apply mul_pos
+  · norm_num
+  · exact sq_pos_of_pos b.eta_pos
 
 end PseudoRiemannianMetric
 end

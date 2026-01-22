@@ -22,23 +22,19 @@ electrovacuum black hole solutions (along with Schwarzschild, Kerr, and Kerr-New
 
 ## Main Results
 
-* `rn_is_electrovacuum`: The RN metric satisfies Einstein-Maxwell equations
-* `rn_extremal_condition`: Extremal RN has M = |Q| (in geometric units)
-* `rn_horizons_exist`: Horizons exist when M ≥ |Q|
-* `rn_reduces_to_schwarzschild`: Setting Q = 0 gives Schwarzschild
+* Horizon existence and coincidence conditions
+* Surface gravity and thermodynamic quantities
+* Limiting case to Schwarzschild when Q = 0
 
-## Physical Interpretation
+## Physical Properties
 
-The Reissner-Nordström solution describes:
-- Charged black holes (theoretical, as real black holes likely neutralize)
-- The simplest black hole with two horizons
-- A model for studying inner horizon instability
-
-Key features:
-- Two horizons: r± = M ± √(M² - Q²)
+The Reissner-Nordström solution:
+- Satisfies Einstein-Maxwell equations: G_μν = 8π T_μν^EM
+- Has electromagnetic stress-energy T_μν^EM which is traceless
+- Has two horizons: r± = M ± √(M² - Q²)
 - Extremal limit: M = |Q|, horizons coincide
-- Naked singularity if |Q| > M (cosmic censorship violation)
-- Timelike singularity at r = 0 (unlike Schwarzschild's spacelike singularity)
+- Has a timelike singularity at r = 0 (unlike Schwarzschild's spacelike)
+- Inner horizon is a Cauchy horizon (unstable under perturbations)
 
 ## References
 
@@ -224,15 +220,6 @@ The only non-zero component is F_tr = Q/r² (radial electric field). -/
 def rnElectricField (RN : ReissnerNordstromData) (r : ℝ) : ℝ :=
   RN.charge / r^2
 
-/-- The Reissner-Nordström solution satisfies the Einstein-Maxwell equations:
-G_μν = 8π T_μν^EM where T_μν^EM is the electromagnetic stress-energy. -/
-axiom rn_is_electrovacuum (RN : ReissnerNordstromData) :
-    True  -- Einstein-Maxwell equations satisfied
-
-/-- The electromagnetic stress-energy tensor is traceless: T^EM = 0. -/
-axiom em_stress_energy_traceless :
-    True  -- g^μν T_μν^EM = 0
-
 /-! ## Surface Gravity -/
 
 /-- The surface gravity at the outer horizon:
@@ -271,41 +258,28 @@ def ReissnerNordstromData.horizonPotential (RN : ReissnerNordstromData) : ℝ :=
   RN.charge / RN.outerHorizon
 
 /-- The first law of black hole thermodynamics for RN:
-dM = T dS + Φ_H dQ -/
-axiom rn_first_law (RN : ReissnerNordstromData) :
-    True  -- dM = κ/(8π) dA + Φ_H dQ
+dM = T dS + Φ_H dQ = κ/(8π) dA + Φ_H dQ -/
+structure RNFirstLaw (RN : ReissnerNordstromData) where
+  /-- Temperature coefficient -/
+  temperatureCoeff : ℝ := RN.surfaceGravityOuter / (8 * Real.pi)
+  /-- Electric potential coefficient -/
+  electricPotentialCoeff : ℝ := RN.horizonPotential
 
 /-! ## Causal Structure -/
 
 /-- The inner horizon is a Cauchy horizon: beyond it, the future is not determined
-by initial data on a spacelike hypersurface. -/
-axiom inner_horizon_is_cauchy (RN : ReissnerNordstromData) :
-    True  -- r = r₋ is a Cauchy horizon
+by initial data on a spacelike hypersurface.
 
-/-- The inner horizon is unstable: small perturbations cause it to become singular
-(mass inflation instability). -/
-axiom inner_horizon_instability (RN : ReissnerNordstromData) :
-    True  -- Perturbations grow exponentially near r₋
+The inner horizon is unstable: small perturbations cause it to become singular
+(mass inflation instability).
 
-/-- The singularity at r = 0 is timelike (unlike Schwarzschild's spacelike singularity).
+The singularity at r = 0 is timelike (unlike Schwarzschild's spacelike singularity).
 This means it can be avoided by timelike observers. -/
-axiom rn_timelike_singularity (RN : ReissnerNordstromData) :
-    True  -- r = 0 is timelike
-
-/-- The Penrose diagram of RN has an infinite sequence of asymptotic regions. -/
-axiom rn_penrose_diagram :
-    True  -- Maximal extension has infinitely many regions
-
-/-! ## Comparison with Other Solutions -/
-
-/-- The RN metric is a special case of Kerr-Newman with a = 0 (no spin). -/
-axiom rn_is_kerr_newman_limit :
-    True  -- Kerr-Newman with J = 0 gives RN
-
-/-- RN, Schwarzschild, Kerr, and Kerr-Newman are the only stationary,
-asymptotically flat, electrovacuum black hole solutions (no-hair theorem). -/
-axiom electrovacuum_uniqueness :
-    True  -- The four-parameter family is complete
+structure RNCausalStructure (RN : ReissnerNordstromData) where
+  /-- The inner horizon radius -/
+  cauchyHorizonRadius : ℝ := RN.innerHorizon
+  /-- The outer horizon radius -/
+  eventHorizonRadius : ℝ := RN.outerHorizon
 
 end PseudoRiemannianMetric
 end
