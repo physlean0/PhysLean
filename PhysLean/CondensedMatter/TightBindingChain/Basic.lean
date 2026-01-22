@@ -535,11 +535,13 @@ lemma energyEigenstate_orthogonal :
   -- Convert to geometric sum: ∑_n conj(exp(I*k1*n*a)) * exp(I*k2*n*a) = ∑_n ω^n
   have hsum_eq : ∑ n : Fin T.N, (starRingEnd ℂ) (Complex.exp (Complex.I * k1 * n * T.a)) *
       Complex.exp (Complex.I * k2 * n * T.a) = ∑ i ∈ Finset.range T.N, ω ^ i := by
-    rw [Fin.sum_univ_eq_sum_range (fun n => (starRingEnd ℂ) (Complex.exp (Complex.I * k1 * n * T.a)) *
-        Complex.exp (Complex.I * k2 * n * T.a))]
+    rw [Fin.sum_univ_eq_sum_range (fun n =>
+      (starRingEnd ℂ) (Complex.exp (Complex.I * k1 * n * T.a)) *
+      Complex.exp (Complex.I * k2 * n * T.a))]
     apply Finset.sum_congr rfl
     intro i _
-    -- conj(exp(I*k1*i*a)) * exp(I*k2*i*a) = exp(-I*k1*i*a) * exp(I*k2*i*a) = exp(I*(k2-k1)*i*a) = ω^i
+    -- conj(exp(I*k1*i*a)) * exp(I*k2*i*a) = exp(-I*k1*i*a) * exp(I*k2*i*a)
+    -- = exp(I*(k2-k1)*i*a) = ω^i
     rw [starRingEnd_apply, Complex.star_def, ← Complex.exp_conj]
     simp only [map_mul, Complex.conj_I, Complex.conj_ofReal]
     -- star of a natural number (which is real) is itself

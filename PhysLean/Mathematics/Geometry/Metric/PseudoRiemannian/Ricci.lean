@@ -387,7 +387,8 @@ This includes spaces of constant curvature.
     - Hyperbolic space (λ < 0 for Riemannian)
     - de Sitter space (λ > 0 for Lorentzian)
     - Anti-de Sitter space (λ < 0 for Lorentzian) -/
-def IsEinsteinManifold (g : PseudoRiemannianMetric E H M n I) (Ric : RicciTensor g) (Λ : ℝ) : Prop :=
+def IsEinsteinManifold (g : PseudoRiemannianMetric E H M n I) (Ric : RicciTensor g)
+    (Λ : ℝ) : Prop :=
   ∀ (x : M) (u v : TangentSpace I x), Ric x u v = Λ * g.val x u v
 
 /-- A Ricci-flat manifold has vanishing Ricci tensor.

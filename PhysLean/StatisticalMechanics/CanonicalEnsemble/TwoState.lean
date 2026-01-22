@@ -111,7 +111,8 @@ and the energy splitting via cosh:
   F = (E₀+E₁)/2 - k_B T log(2) - k_B T log(cosh(β(E₁-E₀)/2)) -/
 lemma twoState_helmholtzFreeEnergy_eq_cosh (E₀ E₁ : ℝ) (T : Temperature) (hT : 0 < T.val) :
     (twoState E₀ E₁).helmholtzFreeEnergy T =
-    (E₀ + E₁) / 2 - Constants.kB * T.val * (Real.log 2 + Real.log (cosh (β T * (E₁ - E₀) / 2))) := by
+    (E₀ + E₁) / 2 -
+      Constants.kB * T.val * (Real.log 2 + Real.log (cosh (β T * (E₁ - E₀) / 2))) := by
   rw [twoState_helmholtzFreeEnergy_eq]
   have h1 : 0 < (2 : ℝ) := by norm_num
   have h2 : 0 < exp (- β T * (E₀ + E₁) / 2) := exp_pos _

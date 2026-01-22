@@ -164,9 +164,10 @@ lemma surfaceGravity_nonneg (bh : BlackHole) : surfaceGravity bh ≥ 0 := by
   · apply div_nonneg
     · exact Real.sqrt_nonneg _
     · have hm : bh.mass > 0 := bh.mass_pos
-      have hsqrt : Real.sqrt (bh.mass ^ 2 - (bh.angularMomentum / bh.mass) ^ 2 - bh.charge ^ 2) ≥ 0 :=
-        Real.sqrt_nonneg _
-      have hr : bh.mass + Real.sqrt (bh.mass ^ 2 - (bh.angularMomentum / bh.mass) ^ 2 - bh.charge ^ 2) > 0 := by
+      have hsqrt : Real.sqrt (bh.mass ^ 2 - (bh.angularMomentum / bh.mass) ^ 2 -
+          bh.charge ^ 2) ≥ 0 := Real.sqrt_nonneg _
+      have hr : bh.mass + Real.sqrt (bh.mass ^ 2 - (bh.angularMomentum / bh.mass) ^ 2 -
+          bh.charge ^ 2) > 0 := by
         linarith
       have h2 : 2 * bh.mass > 0 := by linarith
       exact le_of_lt (mul_pos h2 hr)

@@ -252,7 +252,7 @@ lemma toComplex_equivariant {n} {c : Fin n → realLorentzTensor.Color}
     rw [pureToComplex_equivariant]
     -- Rewrite RHS: toLorentzGroup Λ • p.toTensor = (toLorentzGroup Λ • p).toTensor
     rw [actionT_pure]
-    -- Rewrite RHS: toComplex (toLorentzGroup Λ • p).toTensor = (pureToComplex (toLorentzGroup Λ • p)).toTensor
+    -- RHS: toComplex (toLorentzGroup Λ • p).toTensor = (pureToComplex (... Λ • p)).toTensor
     rw [toComplex_pure]
   · intro r t ht
     -- Scalar multiplication case: Λ • toComplex (r • t) = toComplex (r • toLorentzGroup Λ • t)
@@ -523,7 +523,8 @@ lemma inclRealToComplex_contr_up
 /-- The contraction applied to complexified vectors equals the complexification
 of the real contraction (down case).
 
-For `.down` colors, contraction is via `coContrContract` (real) and `coContrContraction` (complex). -/
+For `.down` colors, contraction is via `coContrContract` (real) and
+`coContrContraction` (complex). -/
 lemma inclRealToComplex_contr_down
     (v : (realLorentzTensor 3).FD.obj (Discrete.mk realLorentzTensor.Color.down))
     (w : (realLorentzTensor 3).FD.obj (Discrete.mk realLorentzTensor.Color.up)) :
@@ -619,7 +620,7 @@ lemma contrT_toComplex {n} {c : Fin (n + 1 + 1) → realLorentzTensor.Color}
     --    = ofReal(contrPCoeff) • toComplex((dropPair p).toTensor)  [by semilinearity]
     -- RHS: permT id (contrT n i j ... (toComplex p.toTensor))
     --    = permT id (contrT n i j ... (pureToComplex p).toTensor)  [by toComplex_pure]
-    --    = permT id (contrPCoeff' • (dropPair (pureToComplex p)).toTensor)  [by contrT_pure, contrP]
+    --    = permT id (contrPCoeff' • (dropPair ...).toTensor)  [by contrT_pure, contrP]
     rw [contrT_pure, Pure.contrP, LinearMap.map_smulₛₗ]
     -- LHS: ofReal(contrPCoeff p) • toComplex((dropPair p).toTensor)
     -- RHS: permT id (contrT n i j ... (toComplex p.toTensor))
@@ -668,7 +669,8 @@ lemma pureToComplex_drop {n : ℕ} {c : Fin (n + 1) → realLorentzTensor.Color}
 /-- The evaluation coefficient for complexified pure tensors equals the complexification
 of the real evaluation coefficient. -/
 lemma pureToComplex_evalPCoeff {n : ℕ} {c : Fin (n + 1) → realLorentzTensor.Color}
-    (i : Fin (n + 1)) (b : Fin (realLorentzTensor.repDim (c i))) (p : Pure (realLorentzTensor 3) c) :
+    (i : Fin (n + 1)) (b : Fin (realLorentzTensor.repDim (c i)))
+    (p : Pure (realLorentzTensor 3) c) :
     Pure.evalPCoeff i (indexCast b) (pureToComplex p) =
     Complex.ofRealHom (Pure.evalPCoeff i b p) := by
   simp only [Pure.evalPCoeff, pureToComplex, Function.comp_apply, indexCast]

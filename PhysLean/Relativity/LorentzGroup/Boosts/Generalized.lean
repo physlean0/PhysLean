@@ -455,7 +455,8 @@ lemma generalizedBoost_inv (u v : Velocity d) :
 The time component of a generalised boost is equal to
 ```
 1 +
-    ‖u.1.timeComponent • v.1.spatialPart - v.1.timeComponent • u.1.spatialPart‖^2 / (1 + ⟪u.1, v.1⟫ₘ)
+    ‖u.1.timeComponent • v.1.spatialPart -
+      v.1.timeComponent • u.1.spatialPart‖^2 / (1 + ⟪u.1, v.1⟫ₘ)
 ```
 
 Proof sketch (from Zulip discussion):
@@ -475,8 +476,7 @@ lemma generalizedBoost_timeComponent_eq (u v : Velocity d) :
   -- Start from the coordinate formula
   rw [generalizedBoost_apply_eq_toCoord]
   simp only [Matrix.one_apply_eq, minkowskiMatrix.inl_0_inl_0]
-  -- The goal is now: 1 + 2 * u.1 (inl 0) * v.1 (inl 0) - (u.1 (inl 0) + v.1 (inl 0))² / (1 + ⟪u.1, v.1⟫ₘ)
-  --                = 1 + ‖u.1.timeComponent • v.1.spatialPart - v.1.timeComponent • u.1.spatialPart‖² / (1 + ⟪u.1, v.1⟫ₘ)
+  -- Goal: 1 + 2*u₁*v₁ - (u₁+v₁)²/(1+⟪u,v⟫ₘ) = 1 + ‖u₁v⃗ - v₁u⃗‖²/(1+⟪u,v⟫ₘ)
   have hden := Velocity.one_add_minkowskiProduct_neq_zero u v
   -- Key identity: ‖u₁v⃗ - v₁u⃗‖² = 2u₁v₁(1+(u,v)) - (u₁+v₁)²
   have h_norm_sq : ‖u.1.timeComponent • v.1.spatialPart - v.1.timeComponent • u.1.spatialPart‖^2 =

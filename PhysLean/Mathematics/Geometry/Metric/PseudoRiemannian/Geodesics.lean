@@ -157,8 +157,8 @@ structure GeodesicCongruence (conn : LeviCivitaConnection g) where
   vorticity_nonneg : ∀ x, vorticitySquared x ≥ 0
 
 /-- The Raychaudhuri rate: dθ/dτ = -θ²/3 - σ² + ω² - R_{μν} v^μ v^ν -/
-def raychaudhuriRateCongruence (g : PseudoRiemannianMetric E H M n I) {conn : LeviCivitaConnection g}
-    (C : GeodesicCongruence conn) (Ric : RicciTensor g)
+def raychaudhuriRateCongruence (g : PseudoRiemannianMetric E H M n I)
+    {conn : LeviCivitaConnection g} (C : GeodesicCongruence conn) (Ric : RicciTensor g)
     (x : M) (v : TangentSpace I x) : ℝ :=
   -C.expansion x^2 / 3 - C.shearSquared x + C.vorticitySquared x - Ric x v v
 

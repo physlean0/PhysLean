@@ -71,7 +71,7 @@ lemma timelike_future_spatial_bound {d : ℕ} {v : Vector d}
   have h := timelike_time_dominates_space hv
   rw [real_inner_self_eq_norm_sq] at h
   have h1 : ‖spatialPart v‖ ^ 2 < timeComponent v ^ 2 := by
-    convert h using 2 ; ring
+    convert h using 2; ring
   have h2 : timeComponent v > 0 := hv_future
   have h3 : ‖spatialPart v‖ ≥ 0 := norm_nonneg _
   nlinarith [sq_nonneg (‖spatialPart v‖ - timeComponent v),
@@ -147,7 +147,7 @@ lemma reverse_cauchy_schwarz {d : ℕ} (u v : Vector d)
     have h := h_spatial_u
     rw [real_inner_self_eq_norm_sq] at h
     have h1 : ‖spatialPart u‖ ^ 2 < timeComponent u ^ 2 := by
-      convert h using 2 ; ring
+      convert h using 2; ring
     have h2 : timeComponent u > 0 := hu_future
     have h3 : ‖spatialPart u‖ ≥ 0 := norm_nonneg _
     nlinarith [sq_nonneg (‖spatialPart u‖ - timeComponent u),
@@ -156,7 +156,7 @@ lemma reverse_cauchy_schwarz {d : ℕ} (u v : Vector d)
     have h := h_spatial_v
     rw [real_inner_self_eq_norm_sq] at h
     have h1 : ‖spatialPart v‖ ^ 2 < timeComponent v ^ 2 := by
-      convert h using 2 ; ring
+      convert h using 2; ring
     have h2 : timeComponent v > 0 := hv_future
     have h3 : ‖spatialPart v‖ ≥ 0 := norm_nonneg _
     nlinarith [sq_nonneg (‖spatialPart v‖ - timeComponent v),
