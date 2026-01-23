@@ -89,16 +89,18 @@ lemma limit_S_sphere(r : ℝ) :
 
 end SpatialGeometry
 
-/-- The structure FLRW is defined to contain the physical parameters of the
+/-- The structure FLRW contains the physical parameters of the
   Friedmann-Lemaître-Robertson-Walker metric. That is, it contains
-- The scale factor `a(t)`
-- An element of `SpatialGeometry`.
+- The scale factor `a(t)` as a function of cosmic time
+- An element of `SpatialGeometry` (spherical, flat, or saddle).
 
-Semiformal implementation note: It is possible that we should restrict
-`a(t)` to be smooth or at least twice differentiable.
--/
-@[sorryful]
-def FLRW : Type := sorry
+Implementation note: It is possible that we should restrict
+`a(t)` to be smooth or at least twice differentiable in the future. -/
+structure FLRW where
+  /-- The scale factor as a function of cosmic time. -/
+  scaleFactor : ℝ → ℝ
+  /-- The spatial geometry (spherical, flat, or saddle). -/
+  spatialGeometry : SpatialGeometry
 
 namespace FLRW
 
@@ -167,20 +169,84 @@ noncomputable def decelerationParameter (a : ℝ → ℝ) (t : ℝ) : ℝ :=
     - (deriv (deriv a) t * a t) / (deriv a t)^2
 
 /-- The deceleration parameter is equal to `- (1 + (dₜ H)/H^2)`. -/
-informal_lemma decelerationParameter_eq_one_plus_hubbleConstant where
-  deps := []
-  tag := "6Z23H"
+lemma decelerationParameter_eq_one_plus_hubbleConstant (a : ℝ → ℝ) (t : ℝ)
+    (ha : DifferentiableAt ℝ a t)
+    (ha' : DifferentiableAt ℝ (deriv a) t)
+    (ha_ne : a t ≠ 0)
+    (hda_ne : deriv a t ≠ 0) :
+    decelerationParameter a t = -(1 + deriv (hubbleConstant a) t / (hubbleConstant a t)^2) := by
+  have h_H_eq : hubbleConstant a = (fun t => deriv a t) / (fun t => a t) := rfl
+  have h_deriv_H : deriv (hubbleConstant a) t =
+      (deriv (deriv a) t * a t - deriv a t * deriv a t) / (a t)^2 := by
+    rw [h_H_eq]
+    rw [deriv_div ha' ha ha_ne]
+  simp only [decelerationParameter, hubbleConstant, h_deriv_H]
+  field_simp [ha_ne, hda_ne]
+  ring
 
 /-- The time evolution of the hubble parameter is equal to `dₜ H = - H^2 (1 + q)`. -/
-informal_lemma time_evolution_hubbleConstant where
-  deps := []
-  tag := "6Z3BS"
+lemma time_evolution_hubbleConstant (a : ℝ → ℝ) (t : ℝ)
+    (ha : DifferentiableAt ℝ a t)
+    (ha' : DifferentiableAt ℝ (deriv a) t)
+    (ha_ne : a t ≠ 0)
+    (hda_ne : deriv a t ≠ 0) :
+    deriv (hubbleConstant a) t = - (hubbleConstant a t)^2 * (1 + decelerationParameter a t) := by
+  have h := decelerationParameter_eq_one_plus_hubbleConstant a t ha ha' ha_ne hda_ne
+  have hH_ne : hubbleConstant a t ≠ 0 := by
+    simp only [hubbleConstant]
+    exact div_ne_zero hda_ne ha_ne
+  field_simp [hH_ne] at h ⊢
+  linarith [h]
 
-/-- There exists a time at which the hubble constant decreases if and only if
-  there exists a time where the deceleration parameter is less then `-1`. -/
-informal_lemma hubbleConstant_decrease_iff where
-  deps := []
-  tag := "6Z3FS"
+/-- The Hubble constant is decreasing at time t if and only if
+  the deceleration parameter q(t) > -1 (assuming H(t) ≠ 0).
+
+  From `time_evolution_hubbleConstant`:
+    dH/dt = -H² · (1 + q)
+
+  So dH/dt < 0 (H decreasing) iff
+    -H² · (1 + q) < 0
+  Since H² > 0 when H ≠ 0, this is equivalent to
+    1 + q > 0, i.e., q > -1. -/
+lemma hubbleConstant_decreasing_iff (a : ℝ → ℝ) (t : ℝ)
+    (ha : DifferentiableAt ℝ a t)
+    (ha' : DifferentiableAt ℝ (deriv a) t)
+    (ha_ne : a t ≠ 0)
+    (hda_ne : deriv a t ≠ 0) :
+    deriv (hubbleConstant a) t < 0 ↔ decelerationParameter a t > -1 := by
+  rw [time_evolution_hubbleConstant a t ha ha' ha_ne hda_ne]
+  have hH_ne : hubbleConstant a t ≠ 0 := div_ne_zero hda_ne ha_ne
+  have hH_sq_pos : (hubbleConstant a t)^2 > 0 := sq_pos_of_ne_zero hH_ne
+  constructor
+  · intro h
+    -- -H² · (1 + q) < 0 with H² > 0 implies 1 + q > 0
+    have h1 : 1 + decelerationParameter a t > 0 := by nlinarith
+    linarith
+  · intro h
+    -- q > -1 means 1 + q > 0, so -H² · (1 + q) < 0
+    have h1 : 1 + decelerationParameter a t > 0 := by linarith
+    nlinarith
+
+/-- The Hubble constant is increasing at time t if and only if
+  the deceleration parameter q(t) < -1 (assuming H(t) ≠ 0). -/
+lemma hubbleConstant_increasing_iff (a : ℝ → ℝ) (t : ℝ)
+    (ha : DifferentiableAt ℝ a t)
+    (ha' : DifferentiableAt ℝ (deriv a) t)
+    (ha_ne : a t ≠ 0)
+    (hda_ne : deriv a t ≠ 0) :
+    deriv (hubbleConstant a) t > 0 ↔ decelerationParameter a t < -1 := by
+  rw [time_evolution_hubbleConstant a t ha ha' ha_ne hda_ne]
+  have hH_ne : hubbleConstant a t ≠ 0 := div_ne_zero hda_ne ha_ne
+  have hH_sq_pos : (hubbleConstant a t)^2 > 0 := sq_pos_of_ne_zero hH_ne
+  constructor
+  · intro h
+    -- -H² · (1 + q) > 0 with H² > 0 implies 1 + q < 0
+    have h1 : 1 + decelerationParameter a t < 0 := by nlinarith
+    linarith
+  · intro h
+    -- q < -1 means 1 + q < 0, so -H² · (1 + q) > 0
+    have h1 : 1 + decelerationParameter a t < 0 := by linarith
+    nlinarith
 end FriedmannEquation
 end FLRW
 

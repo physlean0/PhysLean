@@ -363,11 +363,56 @@ lemma isBounded_of_𝓵_pos (h : 0 < P.𝓵) : P.IsBounded := by
   linarith
 
 /-- When there is no quartic coupling, the potential is bounded iff the mass squared is
-non-positive, i.e., for `P : Potential` then `P.IsBounded` iff `P.μ2 ≤ 0`. That is to say
-`- P.μ2 * ‖φ‖_H^2 x` is bounded below iff `P.μ2 ≤ 0`. -/
-informal_lemma isBounded_iff_of_𝓵_zero where
-  deps := [`StandardModel.HiggsField.Potential.IsBounded, `StandardModel.HiggsField.Potential]
-  tag := "6V2K5"
+non-positive, i.e., for `P : Potential` with `P.𝓵 = 0`, then `P.IsBounded ↔ P.μ2 ≤ 0`.
+
+When λ = 0, the potential is V(φ, x) = -μ² ‖φ‖_H². This is bounded below iff -μ² ≥ 0,
+i.e., μ² ≤ 0. -/
+lemma isBounded_iff_of_𝓵_zero (h𝓵 : P.𝓵 = 0) : P.IsBounded ↔ P.μ2 ≤ 0 := by
+  constructor
+  · -- IsBounded → μ2 ≤ 0
+    intro hb
+    by_contra hμ
+    push_neg at hμ
+    -- If μ2 > 0, we can make the potential arbitrarily negative
+    obtain ⟨c, hc⟩ := hb
+    -- We need a Higgs field with large normSq. Use a constant field.
+    -- For any r ≥ 0, const (HiggsVec.ofReal r) has normSq = r at all points
+    have h1 : ∀ r : ℝ, 0 ≤ r → ∃ (φ : HiggsField) (x : SpaceTime), ‖φ‖_H^2 x = r := by
+      intro r hr
+      use const (HiggsVec.ofReal r), 0
+      rw [const_normSq, HiggsVec.ofReal_normSq hr]
+    -- Choose r large enough that -μ² * r < c
+    let r := (|c| + 1) / P.μ2 + 1
+    have hr_pos : 0 < r := by
+      simp only [r]
+      have hμ2_pos : 0 < P.μ2 := hμ
+      have h1 : 0 ≤ |c| := abs_nonneg c
+      have h2 : 0 ≤ (|c| + 1) / P.μ2 := div_nonneg (by linarith) (le_of_lt hμ2_pos)
+      linarith
+    obtain ⟨φ, x, hφx⟩ := h1 r (le_of_lt hr_pos)
+    have hV : P.toFun φ x = -P.μ2 * r := by
+      simp only [toFun, h𝓵, zero_mul, add_zero, hφx]
+    have hc' := hc φ x
+    rw [hV] at hc'
+    -- Now show -μ² * r < c leads to contradiction with c ≤ -μ² * r
+    have h2 : r > (|c| + 1) / P.μ2 := by simp only [r]; linarith
+    have h3 : P.μ2 * r > |c| + 1 := by
+      calc P.μ2 * r > P.μ2 * ((|c| + 1) / P.μ2) := mul_lt_mul_of_pos_left h2 hμ
+        _ = |c| + 1 := by field_simp
+    -- So -P.μ2 * r < -(|c| + 1) ≤ c - 1 < c (since -(|c|+1) ≤ -|c| - 1 ≤ c - 1)
+    have h4 : -P.μ2 * r < -(|c| + 1) := by linarith
+    have h5 : -(|c| + 1) ≤ c := by
+      have := neg_abs_le c
+      linarith
+    linarith
+  · -- μ2 ≤ 0 → IsBounded
+    intro hμ
+    use 0
+    intro φ x
+    simp only [toFun, h𝓵, zero_mul, add_zero]
+    have h1 : 0 ≤ -P.μ2 := by linarith
+    have h2 : 0 ≤ ‖φ‖_H^2 x := normSq_nonneg φ x
+    exact mul_nonneg h1 h2
 
 /-!
 

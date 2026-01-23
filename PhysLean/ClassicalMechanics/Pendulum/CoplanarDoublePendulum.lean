@@ -5,6 +5,7 @@ Authors: Shlok Vaibhav Singh
 -/
 import PhysLean.Meta.Informal.Basic
 import PhysLean.Meta.Sorry
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 /-!
 # Coplanar Double Pendulum
 ### Tag: LnL_1.5.1
@@ -66,9 +67,10 @@ namespace ClassicalMechanics
 
 namespace CoplanarDoublePendulum
 
-/-- The configuration space of the coplaner double pendulum. -/
-@[sorryful]
-def ConfigurationSpace : Type := sorry
+/-- The configuration space of the coplanar double pendulum.
+The two degrees of freedom are the angles φ₁ and φ₂ that each string makes with the vertical.
+Mathematically this is the 2-torus S¹ × S¹, but we model it as ℝ × ℝ for simplicity. -/
+def ConfigurationSpace : Type := ℝ × ℝ
 
 end CoplanarDoublePendulum
 end ClassicalMechanics

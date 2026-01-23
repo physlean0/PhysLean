@@ -455,21 +455,74 @@ lemma generalizedBoost_inv (u v : Velocity d) :
 The time component of a generalised boost is equal to
 ```
 1 +
-    ‖u.1.timeComponent • v.1.spatialPart - v.1.timeComponent • u.1.spatialPart‖ / (1 + ⟪u.1, v.1⟫ₘ)
+    ‖u.1.timeComponent • v.1.spatialPart -
+      v.1.timeComponent • u.1.spatialPart‖^2 / (1 + ⟪u.1, v.1⟫ₘ)
 ```
 
-A proof of this result can be found at the below link:
-https://leanprover.zulipchat.com/#narrow/channel/479953-PhysLean/topic/Lorentz.20group/near/523249684
+Proof sketch (from Zulip discussion):
+Let `u⃗, v⃗` denote the spatial parts of `u, v` and `u₁, v₁` the time components.
+1. First note: `‖u₁v⃗ - v₁u⃗‖² = u₁²‖v⃗‖² + v₁²‖u⃗‖² - 2u₁v₁(u⃗·v⃗)`
+2. Using `‖v⃗‖² = v₁² - 1` (from the velocity constraint `(u,u) = 1`):
+   `‖u₁v⃗ - v₁u⃗‖² = 2u₁v₁(u,v) - u₁² - v₁² = 2u₁v₁(1+(u,v)) - (u₁+v₁)²`
+3. From `generalizedBoost_apply_eq_toCoord`: `(φ_uv)₁₁ = 1 + 2u₁v₁ - (u₁+v₁)²/(1+(u,v))`
+4. Substituting: `(φ_uv)₁₁ = 1 + ‖u₁v⃗ - v₁u⃗‖²/(1+(u,v))`
 
-Note that the declaration of this semiformal result will be similar once
-the TODO item `FXQ45` is completed.
+See: https://leanprover.zulipchat.com/#narrow/channel/479953-PhysLean/topic/Lorentz.20group/near/523249684
 -/
-@[sorryful]
 lemma generalizedBoost_timeComponent_eq (u v : Velocity d) :
     (generalizedBoost u v).1 (Sum.inl 0) (Sum.inl 0) = 1 +
     ‖u.1.timeComponent • v.1.spatialPart -
-      v.1.timeComponent • u.1.spatialPart‖ / (1 + ⟪u.1, v.1⟫ₘ) := by
-  sorry
+      v.1.timeComponent • u.1.spatialPart‖^2 / (1 + ⟪u.1, v.1⟫ₘ) := by
+  -- Start from the coordinate formula
+  rw [generalizedBoost_apply_eq_toCoord]
+  simp only [Matrix.one_apply_eq, minkowskiMatrix.inl_0_inl_0]
+  -- Goal: 1 + 2*u₁*v₁ - (u₁+v₁)²/(1+⟪u,v⟫ₘ) = 1 + ‖u₁v⃗ - v₁u⃗‖²/(1+⟪u,v⟫ₘ)
+  have hden := Velocity.one_add_minkowskiProduct_neq_zero u v
+  -- Key identity: ‖u₁v⃗ - v₁u⃗‖² = 2u₁v₁(1+(u,v)) - (u₁+v₁)²
+  have h_norm_sq : ‖u.1.timeComponent • v.1.spatialPart - v.1.timeComponent • u.1.spatialPart‖^2 =
+      2 * u.1.timeComponent * v.1.timeComponent * (1 + ⟪u.1, v.1⟫ₘ) -
+      (u.1.timeComponent + v.1.timeComponent)^2 := by
+    -- Use ‖a - b‖² = ‖a‖² + ‖b‖² - 2⟨a,b⟩ and the velocity constraint
+    rw [norm_sub_sq_real, norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+    -- u.1.timeComponent = u.1 (Sum.inl 0) which is ≥ 1 for future-pointing velocities
+    have hu1_pos : 0 ≤ u.1.timeComponent := le_of_lt (Velocity.timeComponent_pos u)
+    have hv1_pos : 0 ≤ v.1.timeComponent := le_of_lt (Velocity.timeComponent_pos v)
+    rw [abs_of_nonneg hu1_pos, abs_of_nonneg hv1_pos]
+    -- Use the velocity constraint: ‖spatialPart‖² = timeComponent² - 1
+    have hu_constraint := Velocity.norm_spatialPart_sq_eq u
+    have hv_constraint := Velocity.norm_spatialPart_sq_eq v
+    -- Expand the inner product of smul terms
+    rw [inner_smul_left, inner_smul_right]
+    -- Expand the inner product of spatial parts using the Minkowski product relation
+    have h_inner : @inner ℝ _ _ v.1.spatialPart u.1.spatialPart =
+        u.1.timeComponent * v.1.timeComponent - ⟪u.1, v.1⟫ₘ := by
+      have h := minkowskiProduct_eq_timeComponent_spatialPart u.1 v.1
+      rw [real_inner_comm]
+      linarith
+    rw [h_inner]
+    -- Now rewrite the norm squared terms using the constraints
+    have hu_sp_sq : ‖u.1.spatialPart‖^2 = u.1.timeComponent^2 - 1 := by
+      rw [hu_constraint, timeComponent]
+    have hv_sp_sq : ‖v.1.spatialPart‖^2 = v.1.timeComponent^2 - 1 := by
+      rw [hv_constraint, timeComponent]
+    calc (u.1.timeComponent * ‖v.1.spatialPart‖) ^ 2 -
+          2 * (u.1.timeComponent * (v.1.timeComponent *
+            (u.1.timeComponent * v.1.timeComponent - ⟪u.1, v.1⟫ₘ))) +
+          (v.1.timeComponent * ‖u.1.spatialPart‖) ^ 2
+        = u.1.timeComponent^2 * ‖v.1.spatialPart‖^2 + v.1.timeComponent^2 * ‖u.1.spatialPart‖^2 -
+          2 * u.1.timeComponent * v.1.timeComponent *
+            (u.1.timeComponent * v.1.timeComponent - ⟪u.1, v.1⟫ₘ) := by ring
+      _ = u.1.timeComponent^2 * (v.1.timeComponent^2 - 1) +
+          v.1.timeComponent^2 * (u.1.timeComponent^2 - 1) -
+          2 * u.1.timeComponent * v.1.timeComponent *
+            (u.1.timeComponent * v.1.timeComponent - ⟪u.1, v.1⟫ₘ) := by rw [hu_sp_sq, hv_sp_sq]
+      _ = 2 * u.1.timeComponent * v.1.timeComponent * (1 + ⟪u.1, v.1⟫ₘ) -
+          (u.1.timeComponent + v.1.timeComponent)^2 := by ring
+  -- Now use h_norm_sq to prove the main goal
+  rw [h_norm_sq]
+  simp only [timeComponent]
+  field_simp [hden]
+  ring
 
 end LorentzGroup
 

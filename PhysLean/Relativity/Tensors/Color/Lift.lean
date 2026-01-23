@@ -938,10 +938,37 @@ lemma forgetLiftAppCon_naturality_eqToHom_apply (c c1 : C) (h : c = c1)
 
 /-- The natural isomorphism between `lift (C := C) ⋙ forget` and
 `Functor.id (Discrete C ⥤ Rep k G)`.
+
+This shows that `lift` is a section of `forget`, i.e., lifting a functor and then
+forgetting the monoidal structure gives back (up to natural isomorphism) the original functor.
 -/
-informal_definition forgetLift where
-  deps := [``forget, ``lift]
-  tag := "6VZWS"
+def forgetLift : lift (C := C) (k := k) (G := G) ⋙ forget ≅ 𝟭 (Discrete C ⥤ Rep k G) :=
+  NatIso.ofComponents
+    (fun F => Discrete.natIso (fun c => forgetLiftApp F c.as))
+    (fun {F F'} η => by
+      ext c
+      simp only [Functor.comp_obj, Functor.id_obj, Functor.comp_map, Functor.id_map,
+        Discrete.natIso_hom_app, NatTrans.comp_app]
+      -- Need to show: (forgetLiftApp F c.as).hom ≫ η.app c =
+      --               ((lift ⋙ forget).map η).app c ≫ (forgetLiftApp F' c.as).hom
+      simp only [lift, forget, Discrete.natTrans_app]
+      -- The LHS is: (forgetLiftApp F c.as).hom ≫ η.app (Discrete.mk c.as)
+      -- The RHS is: (lift.repNatTransOfColor η).app (incl.obj c) ≫ (forgetLiftApp F' c.as).hom
+      rename_i x
+      simp only [Action.comp_hom, ModuleCat.hom_comp]
+      refine PiTensorProduct.induction_on' x (fun r y => ?_) (fun x y hx hy => by
+        simp only [map_add, hx, hy])
+      simp only [PiTensorProduct.tprodCoeff_eq_smul_tprod, map_smul]
+      apply congrArg
+      -- The goal is about pure tensors
+      simp only [forgetLiftApp, forgetLiftAppV, Action.mkIso_hom_hom,
+        LinearEquiv.toModuleIso_hom, ModuleCat.hom_ofHom]
+      simp only [LinearMap.comp_apply]
+      erw [PiTensorProduct.subsingletonEquiv_apply_tprod]
+      simp only [repNatTransOfColor]
+      erw [repNatTransOfColorApp_tprod]
+      erw [PiTensorProduct.subsingletonEquiv_apply_tprod]
+      rfl)
 
 end
 end OverColor

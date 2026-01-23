@@ -194,5 +194,93 @@ lemma SL2CRep_ρ_basis (M : SL(2, ℂ)) (i : Fin 1 ⊕ Fin 3) :
   simp only [LinearMap.map_smulₛₗ, ofRealHom_eq_coe, coe_smul]
   rw [complexContrBasis_of_real]
 
+/-!
+
+## Covariant vectors - relation to real
+
+-/
+
+/-- The semilinear map including real covariant Lorentz vectors into complex covariant
+  Lorentz vectors. -/
+def inclCoRealLorentz : CoMod 3 →ₛₗ[Complex.ofRealHom] complexCo where
+  toFun v := {val := ofReal ∘ v.toFin1dℝ}
+  map_add' x y := by
+    apply Lorentz.CoℂModule.ext
+    rw [Lorentz.CoℂModule.val_add]
+    funext i
+    simp only [Function.comp_apply, Pi.add_apply, map_add]
+    simp only [ofReal_add]
+  map_smul' c x := by
+    apply Lorentz.CoℂModule.ext
+    rw [Lorentz.CoℂModule.val_smul]
+    funext i
+    simp only [Function.comp_apply, ofRealHom_eq_coe, Pi.smul_apply, _root_.map_smul]
+    simp only [smul_eq_mul, ofReal_mul]
+
+lemma inclCoRealLorentz_val (v : CoMod 3) :
+    (inclCoRealLorentz v).val = ofRealHom ∘ v.toFin1dℝ := rfl
+
+lemma complexCoBasis_ρ_val (M : SL(2,ℂ)) (v : complexCo) :
+    ((complexCo.ρ M) v).val =
+    (LorentzGroup.toComplex (SL2C.toLorentzGroup M))⁻¹ᵀ *ᵥ v.val := by
+  rfl
+
+lemma complexCoBasis_of_real (i : Fin 1 ⊕ Fin 3) :
+    (complexCoBasis i) = inclCoRealLorentz (CoMod.stdBasis i) := by
+  apply Lorentz.CoℂModule.ext
+  simp only [complexCoBasis, Basis.coe_ofEquivFun, inclCoRealLorentz,
+    LinearMap.coe_mk, AddHom.coe_mk]
+  ext j
+  simp only [Function.comp_apply]
+  change (Pi.single i 1) j = _
+  by_cases h : i = j
+  · subst h
+    rw [CoMod.toFin1dℝ, CoMod.stdBasis_toFin1dℝEquiv_apply_same]
+    simp
+  · rw [CoMod.toFin1dℝ, CoMod.stdBasis_toFin1dℝEquiv_apply_ne h]
+    simp [h]
+
+/-- The representation `inclCoRealLorentz` is equivariant with respect to the SL(2,ℂ) action
+  on complex covariant vectors and the corresponding Lorentz group action on real covariant
+  vectors.
+
+  The covariant representation acts by the inverse transpose: `M⁻¹ᵀ *ᵥ v`. -/
+lemma inclCoRealLorentz_ρ (M : SL(2, ℂ)) (v : CoMod 3) :
+    (complexCo.ρ M) (inclCoRealLorentz v) =
+    inclCoRealLorentz ((Co 3).ρ (SL2C.toLorentzGroup M) v) := by
+  apply Lorentz.CoℂModule.ext
+  rw [complexCoBasis_ρ_val, inclCoRealLorentz_val, inclCoRealLorentz_val]
+  set Λ := SL2C.toLorentzGroup M
+  -- Use that toComplex commutes with inverse and transpose
+  have h1 : (LorentzGroup.toComplex Λ)⁻¹ᵀ = (LorentzGroup.transpose Λ⁻¹).1.map ofRealHom := by
+    rw [LorentzGroup.toComplex_inv]
+    simp only [LorentzGroup.toComplex, MonoidHom.coe_mk, OneHom.coe_mk,
+      LorentzGroup.transpose_val]
+    rfl
+  rw [h1]
+  funext i
+  simp only [Function.comp_apply, ofRealHom_eq_coe, Matrix.mulVec, dotProduct, Matrix.map_apply]
+  simp only [← Complex.ofReal_mul, ← Complex.ofReal_sum]
+  rfl
+
+lemma Co.ρ_stdBasis (μ : Fin 1 ⊕ Fin 3) (Λ : LorentzGroup 3) :
+    (Co 3).ρ Λ (CoMod.stdBasis μ) = ∑ j, (LorentzGroup.transpose Λ⁻¹).1 j μ • CoMod.stdBasis j := by
+  change (LorentzGroup.transpose Λ⁻¹).1 *ᵥ CoMod.stdBasis μ =
+    ∑ j, (LorentzGroup.transpose Λ⁻¹).1 j μ • CoMod.stdBasis j
+  apply CoMod.ext
+  simp only [toLinAlgEquiv_self, Fintype.sum_sum_type, Finset.univ_unique, Fin.default_eq_zero,
+    Fin.isValue, Finset.sum_singleton, CoMod.val_add, CoMod.val_smul]
+
+lemma SL2CRep_ρ_co_basis (M : SL(2, ℂ)) (i : Fin 1 ⊕ Fin 3) :
+    (complexCo.ρ M) (complexCoBasis i) =
+    ∑ j, (LorentzGroup.transpose (SL2C.toLorentzGroup M)⁻¹).1 j i •
+    complexCoBasis j := by
+  rw [complexCoBasis_of_real, inclCoRealLorentz_ρ]
+  rw [Co.ρ_stdBasis, map_sum]
+  apply congrArg
+  funext j
+  simp only [LinearMap.map_smulₛₗ, ofRealHom_eq_coe, coe_smul]
+  rw [complexCoBasis_of_real]
+
 end Lorentz
 end

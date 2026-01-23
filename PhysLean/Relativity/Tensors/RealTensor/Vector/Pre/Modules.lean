@@ -333,6 +333,12 @@ instance : AddCommGroup (CoMod d) := Equiv.addCommGroup toFin1dℝFun
   with `Fin 1 ⊕ Fin d → ℝ`. -/
 instance : Module ℝ (CoMod d) := Equiv.module ℝ toFin1dℝFun
 
+@[simp]
+lemma val_add (ψ ψ' : CoMod d) : (ψ + ψ').val = ψ.val + ψ'.val := rfl
+
+@[simp]
+lemma val_smul (r : ℝ) (ψ : CoMod d) : (r • ψ).val = r • ψ.val := rfl
+
 /-- The linear equivalence between `CoℝModule` and `(Fin 1 ⊕ Fin d → ℝ)`. -/
 def toFin1dℝEquiv : CoMod d ≃ₗ[ℝ] (Fin 1 ⊕ Fin d → ℝ) :=
   Equiv.linearEquiv ℝ toFin1dℝFun

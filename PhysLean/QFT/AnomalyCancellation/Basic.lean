@@ -273,10 +273,10 @@ def linSolsIncl (χ : ACCSystemLinear) : χ.LinSols →ₗ[ℚ] χ.Charges where
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
-@[sorryful]
 lemma linSolsIncl_injective (χ : ACCSystemLinear) :
     Function.Injective χ.linSolsIncl := by
-  sorry
+  intro S T h
+  exact LinSols.ext h
 
 end ACCSystemLinear
 
@@ -396,7 +396,6 @@ the module of all charges `Charges`.
 def quadSolsIncl (χ : ACCSystemQuad) : χ.QuadSols →[ℚ] χ.Charges :=
   MulActionHom.comp χ.linSolsIncl.toMulActionHom χ.quadSolsInclLinSols
 
-@[sorryful]
 lemma quadSolsIncl_injective (χ : ACCSystemQuad) :
     Function.Injective χ.quadSolsIncl := by
   intro S T h
@@ -536,7 +535,6 @@ lemma solsInclLinSols_injective (χ : ACCSystem) :
 def solsIncl (χ : ACCSystem) : χ.Sols →[ℚ] χ.Charges :=
   MulActionHom.comp χ.quadSolsIncl χ.solsInclQuadSols
 
-@[sorryful]
 lemma solsIncl_injective (χ : ACCSystem) :
     Function.Injective χ.solsIncl := by
   intro S T h
